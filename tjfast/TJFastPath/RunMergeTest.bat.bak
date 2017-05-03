@@ -1,0 +1,2 @@
+javac *.java
+java -Xmx512M queryAnalysis queryTwigPattern.xml data.xml

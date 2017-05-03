@@ -1,0 +1,2 @@
+javac *.java
+java queryAnalysis -Xmx512M queryTwigPattern.xml treebank_e.xml

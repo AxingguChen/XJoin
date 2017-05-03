@@ -1,0 +1,4 @@
+cd outputData
+del *
+cd ..
+java documentAnalysis treebank_e.xml

@@ -1,0 +1,155 @@
+ <!-- <NP><DT>1</DT>
+<NNP-3>1</NNP-3>
+</NP>  -->
+
+
+
+<!-- <ADVP><PP>1</PP>
+<RB>1</RB>
+</ADVP>
+
+
+
+<S><JJ>1</JJ>
+<NP>0<VP>0</VP></NP>
+</S> -->
+
+ <!-- <S>
+    <VP>1<PP>1<NP>1<VBN>1</VBN></NP>
+         <IN>1</IN>
+        </PP>
+   </VP>
+</S>  -->
+
+ <!-- 
+<a>
+<b>0</b></a> 
+
+-->
+<!-- 
+<PP><NP>1<VBN>1</VBN></NP></PP>-->
+
+<!--  <PP><NP>1<VBN>1</VBN></NP>
+         <IN>1</IN>
+        </PP> -->
+   
+
+<!--  <S><JJ>1</JJ>
+<NP>0</NP>
+</S> -->
+
+
+
+
+<!-- <S><VP>0<IN>1</IN></VP>
+<PRP_DOLLAR_>0</PRP_DOLLAR_>
+</S> -->
+
+
+<!--  <S><PP>0<VP>0<NN>1</NN></VP></PP>
+<ADJP>0<JJR>1</JJR></ADJP>
+</S> -->
+
+<!-- 
+ <S><VP>0<IN>0</IN></VP>
+<NP>0</NP>
+</S> 
+-->
+
+<!-- <S>
+<VP>0<IN>0</IN><VB>0</VB></VP>
+<NP>0</NP>
+</S> -->
+
+<!-- <S>
+<VP>0<COMP>0</COMP><VBD>0</VBD></VP>
+<_QUOTES_>0</_QUOTES_>
+</S>  -->
+
+
+ <!-- <S><VP>0<IN>1</IN></VP>
+<NP>0</NP>
+</S> -->
+
+<!--
+
+ <VP><PP-7>0</PP-7>
+<PP-8>0</PP-8>
+</VP>
+
+<emph><bold>1<keyword>1</keyword></bold></emph>
+-->
+
+
+<!-- <VP><DT>1</DT>
+<PRP_DOLLAR_>0</PRP_DOLLAR_>
+</VP> -->
+
+<!--
+<S>
+	<JJ>1</JJ>
+	<NP>1</NP>
+</S>
+
+
+
+<s>
+	<VP>1<PP>1<IN>1</IN>
+	<NP>1<VBN>1</VBN></NP>
+	     </PP>
+	</VP>
+</S>
+
+
+
+
+
+
+
+
+<S><VP>0<NN>1</NN></VP>
+<ADJP>0<JJR>1</JJR></ADJP>
+</S>
+
+
+
+
+
+S[//VP/NN]//ADJP/JJR
+
+S[//VP/IN]//NP
+
+
+
+
+<S><V>0</V>
+<T>0</T>
+</S>
+
+
+<section><title>1</title><text>1</text>
+    </section> 
+
+
+<chapter><title>1</title><section>1<text>1<emph>1</emph></text></section>
+</chapter>
+
+<chapter>
+   <section>0<emph>0<bold>0<keyword>1</keyword></bold></emph>
+   </section>
+</chapter>
+
+
+<book> 
+    <chapter>0<title>0</title>
+              <text>0<emph>1<bold>1<keyword>1</keyword></bold></emph></text>
+    </chapter>
+</book> 
+
+<section><title>0</title><text>0<emph>1<bold>1<keyword>1</keyword></bold></emph></text>
+    </section> -->
+    
+<!--<section>
+<title>0</title>
+<text>1<bold>1</bold><keyword>0<emph>1</emph></keyword></text>
+</section>  -->
