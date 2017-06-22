@@ -28,7 +28,7 @@ public class loadDataSet {
         RandomAccessFile r = null;
 
         try {
-            r = new RandomAccessFile("produce/src/outputData\\" + tag, "rw");
+            r = new RandomAccessFile("src/produce/outputData\\" + tag, "rw");
 
             while (true) {
                 byte len = r.readByte();
@@ -145,7 +145,7 @@ public class loadDataSet {
         //System.out.println("a is "+args[0]+" b is "+b2);
         try{
             RandomAccessFile r = null;
-            r = new  RandomAccessFile("new/src/outputData/a","rw");
+            r = new  RandomAccessFile("xjoin/src/produce/outputData/a","rw");
             while (true)
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);

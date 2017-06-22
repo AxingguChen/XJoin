@@ -43,8 +43,8 @@ public class matchValue_XML_Table{
                 Cell cellL = row.getCell(twigL_n);
                 Cell cellR = row.getCell(twigR_n);
                 try{
-                RandomAccessFile rL = new RandomAccessFile("xjoin/src/outputData/"+twigL+"_v","rw");
-                RandomAccessFile rR = new RandomAccessFile("xjoin/src/outputData/"+twigR+"_v","rw");
+                RandomAccessFile rL = new RandomAccessFile("xjoin/src/produce/outputData/"+twigL+"_v","rw");
+                RandomAccessFile rR = new RandomAccessFile("xjoin/src/produce/outputData/"+twigR+"_v","rw");
                 while (true)
                 { 	// different 'x'_v file need to be read in different byte length
                     byte lenL = rL.readByte();
@@ -88,8 +88,8 @@ public class matchValue_XML_Table{
         try{
             RandomAccessFile r = null;
             RandomAccessFile r_v = null;
-            r = new  RandomAccessFile("xjoin/src/outputData/"+tag,"rw");//read id file
-            r_v = new  RandomAccessFile("xjoin/src/outputData/"+tag+"_v","rw");//read value file
+            r = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag,"rw");//read id file
+            r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
             while (true)
             { 	byte len = r.readByte();
                 byte len_v = r_v.readByte();

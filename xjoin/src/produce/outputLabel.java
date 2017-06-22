@@ -15,7 +15,7 @@ public class outputLabel {
 
         try {
 
-            RandomAccessFile r = new RandomAccessFile("xjoin/src/outputData\\" + tag, "rw");
+            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag, "rw");
 
             long fileLength = r.length();
             r.seek(fileLength);
@@ -330,7 +330,7 @@ public class outputLabel {
         test.outputUTF8("a", labels);
 */
         FileInputStream in = null;
-        in = new FileInputStream("xjoin/src/outputData/a");
+        in = new FileInputStream("xjoin/src/produce/outputData/a");
         int c;
         System.out.println("start");
         while ((c = in.read()) != -1) {

@@ -8,14 +8,12 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import produce.KeyValueComparator.Type;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.RandomAccessFile;
 import java.util.*;
+import java.io.*;
 import java.util.Map.Entry;
+import java.util.Comparator;
+import produce.KeyValueComparator.Type;
 
 public class labelMatching {
 
@@ -78,7 +76,7 @@ public class labelMatching {
 
     // sort the value of the table according to the passing parameter <order> :{left, right}
     public List sortRDBValue(IdentityHashMap<String,String> map, String order){
-        List<Entry<String, String>> list = new ArrayList<Entry<String, String>>(map.entrySet());
+        List<Map.Entry<String, String>> list = new ArrayList<Map.Entry<String, String>>(map.entrySet());
         if(order.equals("left")){
             Collections.sort(list, new KeyValueComparator(Type.KEY));
             /**
@@ -98,8 +96,8 @@ public class labelMatching {
         try{
             RandomAccessFile r = null;
             RandomAccessFile r_v = null;
-            r = new  RandomAccessFile("xjoin/src/outputData/"+tag,"rw");//read id file
-            r_v = new  RandomAccessFile("xjoin/src/outputData/"+tag+"_v","rw");//read value file
+            r = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag,"rw");//read id file
+            r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
             while (true)
             { 	byte len = r.readByte();
                 byte len_v = r_v.readByte();
@@ -127,15 +125,13 @@ public class labelMatching {
     }
 
     public List sortTagValue(IdentityHashMap<String,String> map){
-        List<Entry<String, String>> list = new ArrayList<Entry<String, String>>(map.entrySet());
+        List<Map.Entry<String, String>> list = new ArrayList<Map.Entry<String, String>>(map.entrySet());
         Collections.sort(list, new KeyValueComparator(Type.KEY));//sort by key is to sort by value
         return list;
     }
 
     public void matchValue(List tableList, List tagList){
-        for (Entry<String, String> entry : list1) {
-            //System.out.println("\t" + entry.getKey() + "\t\t" + entry.getValue());
-        }
+
 
     }
 
@@ -143,7 +139,7 @@ public class labelMatching {
         labelMatching m = new labelMatching();
         IdentityHashMap<String,String> map = new IdentityHashMap<String,String>(); // save matched value pair
         map = m.readRDBValue("b","c");
-        List<Entry<String, String>> list = m.sortRDBValue(map,"right");
+        List<Map.Entry<String, String>> list = m.sortRDBValue(map,"right");
         System.out.println(list);
 
         IdentityHashMap<String,String> tagMap =m.getTagMap("b");
@@ -153,7 +149,7 @@ public class labelMatching {
 
 }
 
-class KeyValueComparator implements Comparator<Entry<String,String>>{
+class KeyValueComparator implements Comparator<Map.Entry<String,String>>{
     enum Type{
         KEY, VALUE
     }
