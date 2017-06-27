@@ -10,10 +10,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by zzzhou on 2017-06-27.
@@ -96,7 +93,6 @@ public class labelMatchingListSort {
 
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
-        List<String> l = new ArrayList<>();//every row [value, id]
         try{
             RandomAccessFile r = null;
             RandomAccessFile r_v = null;
@@ -117,6 +113,7 @@ public class labelMatchingListSort {
                     data_v[j] = r_v.readUnsignedByte();
                     value = String.valueOf(data_v[j]);
                 }
+                List<String> l = new ArrayList<>();//every row [value, id]
                 l.add(value);l.add(id);
                 tagList.add(l);//value, id
             }}
@@ -126,10 +123,19 @@ public class labelMatchingListSort {
         catch(Exception e){
             System.out.println("e is "+e);
         }
+        Collections.sort(tagList,new Comparator<List<String>>(){
+            public int compare(List<String> l1, List<String> l2){
+                return l1.get(0).compareTo(l2.get(0));
+            }}
+        );
         return tagList;
     }
 
-    public static void main(String[] args) {
+    public void matchValue(List<Match> result, List<List<String>> l_tagList, List<List<String>> r_tagList){
+
+    }
+
+    public static void main(String[] args) throws Exception{
         List<Match> edges = new ArrayList<>();
         List a = new ArrayList();
         a.add(3);
@@ -146,5 +152,10 @@ public class labelMatchingListSort {
         edges.sort(comparator);
 
         System.out.println(edges);
+
+        labelMatchingListSort m = new labelMatchingListSort();
+        List<List<String>> b_tag = m.getTagMap("b");
+
+        System.out.println("b "+b_tag);
     }
 }
