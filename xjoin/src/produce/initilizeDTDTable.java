@@ -23,6 +23,11 @@ public class initilizeDTDTable extends DefaultHandler {
 
     String ROOT;
 
+    static void debugPrintln(String s) {
+        if (false)
+            System.out.println(s);
+
+    }
 
     // Parser calls this once at the beginning of a document
     public void startDocument() throws SAXException {
@@ -160,14 +165,14 @@ public class initilizeDTDTable extends DefaultHandler {
             for (int i = 1; i <= temp.size(); i++) {
 
                 DTDrule[reference][i] = ((Integer) map.get((String) temp.elementAt(i - 1))).intValue();
-                utilities.DebugPrintln(tag + "'child is " + (String) temp.elementAt(i - 1));
-                utilities.DebugPrintln(tag + "'child is " + DTDrule[reference][i]);
+                debugPrintln(tag + "'child is " + (String) temp.elementAt(i - 1));
+                debugPrintln(tag + "'child is " + DTDrule[reference][i]);
 
             }//end for
 
         }//end while
 
-    		/* ????????????????? ?????????? dtdTable */
+
         dtdTable = new DTDTable();
 
         dtdTable.setNumberOfRules(getNumberofRules());

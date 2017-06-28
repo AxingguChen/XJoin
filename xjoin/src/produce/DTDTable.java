@@ -20,7 +20,6 @@ public class DTDTable {
         this.numberOfTags = numberOfTags;
     }
 
-
     void setNumberOfRules(int numberOfRules) {
         this.numberOfRules = numberOfRules;
     }

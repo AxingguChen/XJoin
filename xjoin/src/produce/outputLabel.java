@@ -128,124 +128,6 @@ public class outputLabel {
         return null;
     }//end convertToUTF8
 
-    static int UTF8ToIntegerOld(int[] bytes) {
-
-        if (bytes.length == 1) {
-            return bytes[0];
-        }//end
-        else if (bytes.length == 2) {
-            String binary0 = decimalToBinary(bytes[0]);
-            String binary1 = decimalToBinary(bytes[1]);
-            //System.out.println("binary0 is "+bytes[0]);
-            return binaryToDecimal(binary0.substring(3, 8) + binary1.substring(2, 8));
-
-        }//end else
-        else if (bytes.length == 3) {
-            String binary0 = decimalToBinary(bytes[0]);
-            String binary1 = decimalToBinary(bytes[1]);
-            String binary2 = decimalToBinary(bytes[2]);
-
-            return binaryToDecimal(binary0.substring(4, 8) + binary1.substring(2, 8) + binary2.substring(2, 8));
-
-        }//end else
-        else if (bytes.length == 4) {
-            String binary0 = decimalToBinary(bytes[0]);
-            String binary1 = decimalToBinary(bytes[1]);
-            String binary2 = decimalToBinary(bytes[2]);
-            String binary3 = decimalToBinary(bytes[3]);
-
-            return binaryToDecimal(binary0.substring(5, 8) + binary1.substring(2, 8) + binary2.substring(2, 8) + binary3.substring(2, 8));
-
-        }//end else
-        else if (bytes.length == 5) {
-            String binary0 = decimalToBinary(bytes[0]);
-            String binary1 = decimalToBinary(bytes[1]);
-            String binary2 = decimalToBinary(bytes[2]);
-            String binary3 = decimalToBinary(bytes[3]);
-            String binary4 = decimalToBinary(bytes[4]);
-
-            return binaryToDecimal(binary0.substring(6, 8) + binary1.substring(2, 8) + binary2.substring(2, 8) + binary3.substring(2, 8) + binary4.substring(2, 8));
-
-        }//end else
-
-        return 0;
-    }//end convertToUTF8
-
-
-    static int UTF8ToInteger(int[] bytes) {
-
-        if (bytes.length == 1) {
-            return bytes[0];
-        }//end
-        else if (bytes.length == 2) {
-            bytes[0] = bytes[0] ^ 192;
-            bytes[1] = bytes[1] ^ 128;
-            bytes[0] = bytes[0] << 6;
-
-            return (bytes[0] | bytes[1]);
-
-        }//end else
-        else if (bytes.length == 3) {
-            bytes[0] = bytes[0] ^ 224;
-            bytes[1] = bytes[1] ^ 128;
-            bytes[2] = bytes[2] ^ 128;
-
-            bytes[1] = bytes[1] << 6;
-
-            bytes[1] = bytes[1] | bytes[2];
-
-            bytes[0] = bytes[0] << 12;
-
-
-            return (bytes[0] | bytes[1]);
-        }//end else
-        else if (bytes.length == 4) {
-            bytes[0] = bytes[0] ^ 240;
-            bytes[1] = bytes[1] ^ 128;
-            bytes[2] = bytes[2] ^ 128;
-            bytes[3] = bytes[3] ^ 128;
-
-            bytes[2] = bytes[2] << 6;
-
-            bytes[2] = bytes[2] | bytes[3];
-
-            bytes[1] = bytes[1] << 12;
-
-            bytes[1] = bytes[1] | bytes[2];
-
-            bytes[0] = bytes[0] << 18;
-
-            return (bytes[0] | bytes[1]);
-
-        }//end else
-        else if (bytes.length == 5) {
-            bytes[0] = bytes[0] ^ 248;
-            bytes[1] = bytes[1] ^ 128;
-            bytes[2] = bytes[2] ^ 128;
-            bytes[3] = bytes[3] ^ 128;
-            bytes[4] = bytes[4] ^ 128;
-
-            bytes[3] = bytes[3] << 6;
-
-            bytes[3] = bytes[3] | bytes[4];
-
-            bytes[2] = bytes[2] << 12;
-
-            bytes[2] = bytes[2] | bytes[3];
-
-            bytes[1] = bytes[1] << 18;
-
-            bytes[1] = bytes[1] | bytes[2];
-
-            bytes[0] = bytes[0] << 24;
-
-            return (bytes[0] | bytes[1]);
-
-        }//end else
-
-        return 0;
-    }//end convertToUTF8
-
     static String addZeroesAtFront(String s, int targetlength) {
 
 
@@ -317,18 +199,7 @@ public class outputLabel {
     }//end binaryToDecimal
 
     static public void main(String[] args) throws Exception {
- /*
-       outputLabel test = new outputLabel();
-        int[] labels = new int[3];
-        labels[0] = 23;
-        labels[1] = 33321;
-        labels[2] = 1233;
-        test.outputUTF8("a", labels);
 
-        labels = new int[1];
-        labels[0] = 283;
-        test.outputUTF8("a", labels);
-*/
         FileInputStream in = null;
         in = new FileInputStream("xjoin/src/produce/outputData/a");
         int c;
@@ -337,7 +208,6 @@ public class outputLabel {
             System.out.print(c);
         }
         in.close();
-
 
     }//end main
 

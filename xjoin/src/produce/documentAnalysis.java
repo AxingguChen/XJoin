@@ -7,6 +7,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.PrintStream;
+import java.util.List;
 import java.util.Stack;
 
 
@@ -104,8 +105,6 @@ public class documentAnalysis extends DefaultHandler {
         eleValueStack.pop();
         labelPathStack.pop();
         maxSilblingStack.pop();
-        //System.out.println("end element:"+tag);
-
     }//end endElement
 
     // Parser calls this once after parsing a document
@@ -128,15 +127,7 @@ public class documentAnalysis extends DefaultHandler {
         for (int i = 1; i < labelPathStack.size(); i++) {
             System.out.print(" " + ((Integer) labelPathStack.elementAt(i)).intValue());
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
-        }//end for
-
-
-        //int result [] =dtdTable.getAllTags(labels,dtdTable.root);
-
-        //	for(int i=0;i<result.length;i++)
-        //	System.out.print(" "+result[i]);
-
-
+        }
     }//end  showAssignedLable
 
     void outputAssignedValue(String tag, Stack eleValueStack){
@@ -156,20 +147,6 @@ public class documentAnalysis extends DefaultHandler {
 
 
     }//end  outputAssignedLable
-
-    void outputNewAssignedLable(Stack tagPathStack, Stack labelPathStack) {
-
-        int labels[] = new int[labelPathStack.size() - 1];
-
-        for (int i = 1; i < labelPathStack.size(); i++)
-            labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
-
-        String fileID = FileID2PathTable.createFileID(tagPathStack);
-
-        outputLabel.outputUTF8(fileID, labels);
-
-
-    }//end   outputNewAssignedLable
 
 
     /**
@@ -220,7 +197,12 @@ public class documentAnalysis extends DefaultHandler {
         // Tell the XMLReader to parse the XML document
         xmlReader.parse(convertToFileURL(filename));
 
-        System.out.println("hello");
+        //Match XML with RDB table
+        labelMatching lm = new labelMatching();
+        List<labelMatching.Match> re = lm.getSolution("b","c");
+
+        System.out.println(re);
+        System.out.println("End of document Analysis");
     }
 
 

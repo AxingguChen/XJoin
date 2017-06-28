@@ -16,8 +16,8 @@ import java.util.*;
  * Created by zzzhou on 2017-06-27.
  * Final version of label Matching.
  */
-public class labelMatchingListSort {
-    private static List<Match> result = new ArrayList<>();
+public class labelMatching {
+
     public static class Match {
         private String leftTagValue;
         private String rightTagValue;
@@ -40,7 +40,8 @@ public class labelMatchingListSort {
         List getR_ID(){ return rightTagID;}
     }
 
-    public void readRDBValue(String twigL, String twigR) throws Exception{
+    public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
+        List<Match> result = new ArrayList<>();
         IdentityHashMap<String,String> tableMap = new IdentityHashMap<>(); // save matched value pair
         File file = new File("xjoin/src/table.xlsx");
         Integer twigL_n=null; //The position of left tag and right tag in RDB table
@@ -94,6 +95,7 @@ public class labelMatchingListSort {
             }
         }
         else {System.out.println("The twig have not been found in RDB table.");}
+        return  result;
     }
 
     public List<List<String>> getTagMap(String tag)  throws Exception{
@@ -198,22 +200,22 @@ public class labelMatchingListSort {
         }
     }
 
-    public List<Match> getSolution(List<Match> result)  throws Exception{
-        labelMatchingListSort m = new labelMatchingListSort();
-        List<List<String>> b_tag = m.getTagMap("b");
-        List<List<String>> c_tag = m.getTagMap("c");
-        System.out.println("b "+b_tag);
-        System.out.println("c "+c_tag);
+    public List<Match> getSolution(String leftTag, String rightTag)  throws Exception{
+        labelMatching m = new labelMatching();
+        List<List<String>> left_tag = m.getTagMap(leftTag);
+        List<List<String>> right_tag = m.getTagMap(rightTag);
+        System.out.println(leftTag+" "+left_tag);
+        System.out.println(rightTag+" "+right_tag);
 
-        m.readRDBValue("b","c");
+        List<Match> result =m.readRDBValue(leftTag,rightTag);
 
         Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
         result.sort(comparator);
-        m.matchValue(result,b_tag,"left");
+        m.matchValue(result,left_tag,"left");
 
         comparator = Comparator.comparing(Match::getR_v);
         result.sort(comparator);
-        m.matchValue(result,c_tag,"right");
+        m.matchValue(result,right_tag,"right");
         System.out.println(result + " size:"+result.size());
         int i = 0;
         while(i != result.size()){
@@ -229,9 +231,8 @@ public class labelMatchingListSort {
     }
 
     public static void main(String[] args) throws Exception{
-        labelMatchingListSort lm = new labelMatchingListSort();
-        List<Match> re = lm.getSolution(result);
-
+        labelMatching lm = new labelMatching();
+        List<Match> re = lm.getSolution("b","c");
         System.out.println(re);
     }
 }
