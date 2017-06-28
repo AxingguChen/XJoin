@@ -10,10 +10,12 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.sql.SQLSyntaxErrorException;
 import java.util.*;
 
 /**
  * Created by zzzhou on 2017-06-27.
+ * Final version of label Matching.
  */
 public class labelMatchingListSort {
     static List<Match> result = new ArrayList<>();
@@ -28,11 +30,15 @@ public class labelMatchingListSort {
             this.leftTagID = l_id;
             this.rightTagID = r_id;
         }
+        public void set_LID(List l_id){this.leftTagID = l_id;}
+        public void set_RID(List r_id){this.rightTagID = r_id;}
         public String toString() {
             return String.format("{%s , %s , %s , %s}", leftTagValue, rightTagValue, leftTagID,rightTagID);
         }
         public String getL_v() { return leftTagValue; }
         public String getR_v() { return rightTagValue; }
+        public List getL_ID(){ return leftTagID;}
+        public List getR_ID(){ return rightTagID;}
     }
 
     public void readRDBValue(String twigL, String twigR) throws Exception{
@@ -131,31 +137,102 @@ public class labelMatchingListSort {
         return tagList;
     }
 
-    public void matchValue(List<Match> result, List<List<String>> l_tagList, List<List<String>> r_tagList){
+    // tFlag{left,right} -> left column value or right column value of table
+    public void matchValue(List<Match> result, List<List<String>> tagList, String tFlag){
+        if(tFlag.equals("left")) {
+            int i=0; int j = 0;
+            while(i != result.size() && j != tagList.size()){
+                String table_value = result.get(i).getL_v();
+                //String rightValue = result.get(i).getR_v();
+                List<String> id_list = new ArrayList<>();//To store id list for every row
+                String tag_value = tagList.get(j).get(0); // 0-value, 1-id
+                int compare_result = table_value.compareTo(tag_value);
+                if (compare_result == 0) { //equals
+                    if(result.get(i).getL_ID() != null)
+                        id_list = result.get(i).getL_ID();
+                    id_list.add(tagList.get(j).get(1));// add corresponding tag id
+                    result.get(i).set_LID(id_list);
+                    j++;
+                }
+                else if (compare_result < 0){ // table_value < tag_value
+                    i++;
+                    //previous table value equals current table value
+                    if(table_value.equals(result.get(i).getL_v())){
+                        id_list = result.get(i-1).getL_ID();
+                        result.get(i).set_LID(id_list);
+                        i++;
+                    }
+                }
+                else if(compare_result > 0){ // table_value > tag_value
+                    j++;
+                }
+            }
+        }
 
+        else if(tFlag.equals("right")) {
+            int i=0; int j = 0;
+            while(i != result.size() && j != tagList.size()){
+                String table_value = result.get(i).getR_v();
+                List<String> id_list = new ArrayList<>();//To store id list for every row
+                String tag_value = tagList.get(j).get(0); // 0-value, 1-id
+                int compare_result = table_value.compareTo(tag_value);
+                if (compare_result == 0) { //equals
+                    if(result.get(i).getR_ID() != null)
+                        id_list = result.get(i).getR_ID();
+                    id_list.add(tagList.get(j).get(1));// add corresponding tag id
+                    result.get(i).set_RID(id_list);
+                    j++;
+                }
+                else if (compare_result < 0){ // table_value < tag_value
+                    i++;
+                    //previous table value equals current table value
+                    if(table_value.equals(result.get(i).getR_v())){
+                        id_list = result.get(i-1).getR_ID();
+                        result.get(i).set_RID(id_list);
+                        i++;
+                    }
+                }
+                else if(compare_result > 0){ // table_value > tag_value
+                    j++;
+                }
+            }
+        }
+    }
+
+    public List<Match> getSolution(List<Match> result)  throws Exception{
+        labelMatchingListSort m = new labelMatchingListSort();
+        List<List<String>> b_tag = m.getTagMap("b");
+        List<List<String>> c_tag = m.getTagMap("c");
+        System.out.println("b "+b_tag);
+        System.out.println("c "+c_tag);
+
+        m.readRDBValue("b","c");
+
+        Comparator<Match> comparator_L = Comparator.comparing(Match::getL_v);
+        result.sort(comparator_L);
+        m.matchValue(result,b_tag,"left");
+
+        Comparator<Match> comparator_R = Comparator.comparing(Match::getR_v);
+        result.sort(comparator_R);
+        m.matchValue(result,c_tag,"right");
+        System.out.println(result + " size:"+result.size());
+        int i = 0;
+        while(i != result.size()){
+            //System.out.println("i:"+i+" l:" + result.get(i).getL_ID() + " r:"+result.get(i).getR_ID());
+            if(result.get(i).getL_ID() == null || result.get(i).getR_ID() == null)
+            {
+                result.remove(i);
+                i--;
+            }
+            i++;
+        }
+        return result;
     }
 
     public static void main(String[] args) throws Exception{
-        List<Match> edges = new ArrayList<>();
-        List a = new ArrayList();
-        a.add(3);
-        List b = new ArrayList();
-        b.add(5);
-        edges.add(new Match("13", "15",a,b));
-        edges.add(new Match("17", "12",a,b));
-        edges.add(new Match("13", "12",a,b));
-        edges.add(new Match("14", "11",a,b));
+        labelMatchingListSort lm = new labelMatchingListSort();
+        List<Match> re = lm.getSolution(result);
 
-        Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
-
-
-        edges.sort(comparator);
-
-        System.out.println(edges);
-
-        labelMatchingListSort m = new labelMatchingListSort();
-        List<List<String>> b_tag = m.getTagMap("b");
-
-        System.out.println("b "+b_tag);
+        System.out.println(re);
     }
 }

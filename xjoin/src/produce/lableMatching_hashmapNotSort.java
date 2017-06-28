@@ -2,6 +2,8 @@ package produce;
 
 /**
  * Created by zzzhou on 2017-06-27.
+ * Cannot use identityHashMap to if it contains the key. (Line 115)
+ * THIS CODE IS Just for reference here. WILL BE DELETED LATER.
  */
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;

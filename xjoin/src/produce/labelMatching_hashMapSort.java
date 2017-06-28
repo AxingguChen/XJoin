@@ -1,6 +1,8 @@
 package produce; /**
  * Created by zzzhou on 2017-06-20.
- * Control that the complexity of algorithm will not reach O(n^2)
+ * Control the complexity of algorithm so that it will not reach O(n^2)
+ * The first version code of labelMatching. But there has some problem with the code.
+ * Just for reference here. WILL BE DELETED LATER.
  */
 
 import org.apache.poi.ss.usermodel.Cell;
