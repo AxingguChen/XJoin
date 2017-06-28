@@ -10,7 +10,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
-import java.sql.SQLSyntaxErrorException;
 import java.util.*;
 
 /**
@@ -18,27 +17,27 @@ import java.util.*;
  * Final version of label Matching.
  */
 public class labelMatchingListSort {
-    static List<Match> result = new ArrayList<>();
+    private static List<Match> result = new ArrayList<>();
     public static class Match {
         private String leftTagValue;
         private String rightTagValue;
         private List leftTagID;
         private List rightTagID;
-        public Match(String l_v, String r_v, List l_id, List r_id) {
+        Match(String l_v, String r_v, List l_id, List r_id) {
             this.leftTagValue = l_v;
             this.rightTagValue = r_v;
             this.leftTagID = l_id;
             this.rightTagID = r_id;
         }
-        public void set_LID(List l_id){this.leftTagID = l_id;}
-        public void set_RID(List r_id){this.rightTagID = r_id;}
+        void set_LID(List l_id){this.leftTagID = l_id;}
+        void set_RID(List r_id){this.rightTagID = r_id;}
         public String toString() {
             return String.format("{%s , %s , %s , %s}", leftTagValue, rightTagValue, leftTagID,rightTagID);
         }
-        public String getL_v() { return leftTagValue; }
-        public String getR_v() { return rightTagValue; }
-        public List getL_ID(){ return leftTagID;}
-        public List getR_ID(){ return rightTagID;}
+        String getL_v() { return leftTagValue; }
+        String getR_v() { return rightTagValue; }
+        List getL_ID(){ return leftTagID;}
+        List getR_ID(){ return rightTagID;}
     }
 
     public void readRDBValue(String twigL, String twigR) throws Exception{
@@ -144,7 +143,7 @@ public class labelMatchingListSort {
             while(i != result.size() && j != tagList.size()){
                 String table_value = result.get(i).getL_v();
                 //String rightValue = result.get(i).getR_v();
-                List<String> id_list = new ArrayList<>();//To store id list for every row
+                List id_list = new ArrayList<>();//To store id list for every row
                 String tag_value = tagList.get(j).get(0); // 0-value, 1-id
                 int compare_result = table_value.compareTo(tag_value);
                 if (compare_result == 0) { //equals
@@ -208,12 +207,12 @@ public class labelMatchingListSort {
 
         m.readRDBValue("b","c");
 
-        Comparator<Match> comparator_L = Comparator.comparing(Match::getL_v);
-        result.sort(comparator_L);
+        Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
+        result.sort(comparator);
         m.matchValue(result,b_tag,"left");
 
-        Comparator<Match> comparator_R = Comparator.comparing(Match::getR_v);
-        result.sort(comparator_R);
+        comparator = Comparator.comparing(Match::getR_v);
+        result.sort(comparator);
         m.matchValue(result,c_tag,"right");
         System.out.println(result + " size:"+result.size());
         int i = 0;
