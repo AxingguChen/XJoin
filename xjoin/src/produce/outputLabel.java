@@ -2,7 +2,10 @@ package produce;
 
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Vector;
+import java.io.*;
 
 public class outputLabel {
 
@@ -51,6 +54,43 @@ public class outputLabel {
 
     }//end output
 
+    static void outputUTF8_V_byte(String tag, String value){
+        byte[] array = value.getBytes();
+    }
+
+    static void outputUTF8_v(String tag, String value) {
+
+        try {
+
+            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag +"_v", "rw");
+
+            long fileLength = r.length();
+            r.seek(fileLength);
+
+            r.writeUTF(value);
+
+            r.close();
+
+        } catch (Exception e) {
+            System.out.println("e is " + e);
+
+        }//end catch
+
+
+    }//end output
+
+    static public void readUTF8_v(String tag) throws Exception{
+        try{
+            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag +"_v", "rw");
+            r.seek(0);
+            String tmp = null;
+            while ((tmp=r.readUTF()) != null){
+                System.out.println("read v:"+tmp);
+            }
+
+        }
+        catch (Exception e){System.out.println("e:"+e);}
+    }
 
     static int[] IntegerToUTF8(int value) {
 
@@ -199,7 +239,7 @@ public class outputLabel {
     }//end binaryToDecimal
 
     static public void main(String[] args) throws Exception {
-
+        /**
         FileInputStream in = null;
         in = new FileInputStream("xjoin/src/produce/outputData/a");
         int c;
@@ -207,7 +247,9 @@ public class outputLabel {
         while ((c = in.read()) != -1) {
             System.out.print(c);
         }
-        in.close();
+        in.close();*/
+        outputLabel o = new outputLabel();
+        o.readUTF8_v("c");
 
     }//end main
 

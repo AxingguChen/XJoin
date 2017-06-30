@@ -49,11 +49,15 @@ public class documentAnalysis extends DefaultHandler {
      * Read value in xml
      */
     public void characters(char[] ch, int start, int length) {
-           	char [] chara =ch;
-            String value = (new String (chara,start,length)).trim();
-            if(value.length() != 0){
+        char[] chara = ch;
+        String value = (new String(chara, start, length)).trim();
+        if (value.length() != 0) {
+
             eleValueStack.push(value);
-            System.out.println("value:"+value);}
+            //System.out.println("value:" + value);
+            outputAssignedValue(tagPathStack.peek().toString(),eleValueStack.peek().toString());
+        }
+
     }// end characters
 
     // Parser calls this for each element in a document
@@ -89,8 +93,8 @@ public class documentAnalysis extends DefaultHandler {
             showAssignedLable(child, labelPathStack);
         }//end if
         outputAssignedLable(child, labelPathStack);
-        System.out.println("current element: "+ child + " Path: "+tagPathStack.toString());
-        System.out.println("label: "+ labelPathStack.toString());
+        //System.out.println("current element: " + child + " Path: " + tagPathStack.toString());
+        //System.out.println("label: " + labelPathStack.toString());
         elementNumber++;
 
     }//end startElement
@@ -101,8 +105,8 @@ public class documentAnalysis extends DefaultHandler {
             throws SAXException {
 
         String tag = (String) tagPathStack.pop();
-        outputAssignedValue(tag,eleValueStack);
-        eleValueStack.pop();
+        //outputAssignedValue(tag, eleValueStack);
+
         labelPathStack.pop();
         maxSilblingStack.pop();
     }//end endElement
@@ -130,12 +134,13 @@ public class documentAnalysis extends DefaultHandler {
         }
     }//end  showAssignedLable
 
-    void outputAssignedValue(String tag, Stack eleValueStack){
-        String tag_v = tag + "_v";
+    void outputAssignedValue(String tag, String value) {
+        String tag_v = tag ;
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
-        int[] values = {Integer.valueOf(((String) eleValueStack.peek()))};
-        outputLabel.outputUTF8(tag_v, values);
+        //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
+        outputLabel.outputUTF8_v(tag_v, value);
     }
+
     void outputAssignedLable(String tag, Stack labelPathStack) {
 
         int labels[] = new int[labelPathStack.size() - 1];
@@ -197,11 +202,7 @@ public class documentAnalysis extends DefaultHandler {
         // Tell the XMLReader to parse the XML document
         xmlReader.parse(convertToFileURL(filename));
 
-        //Match XML with RDB table
-        labelMatching lm = new labelMatching();
-        List<labelMatching.Match> re = lm.getSolution("b","c");
 
-        System.out.println(re);
         System.out.println("End of document Analysis");
     }
 

@@ -36,8 +36,8 @@ public class labelMatching {
         }
         String getL_v() { return leftTagValue; }
         String getR_v() { return rightTagValue; }
-        List getL_ID(){ return leftTagID;}
-        List getR_ID(){ return rightTagID;}
+        public List getL_ID(){ return leftTagID;}
+        public List getR_ID(){ return rightTagID;}
     }
 
     public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
@@ -101,24 +101,22 @@ public class labelMatching {
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
         try{
+            outputLabel.readUTF8_v(tag);
             RandomAccessFile r = null;
             RandomAccessFile r_v = null;
             r = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag,"rw");//read id file
             r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
-            while (true)
+            r_v.seek(0);
+            String value = null;
+            while ((value=r_v.readUTF()) != null)
             { 	byte len = r.readByte();
-                byte len_v = r_v.readByte();
                 int [] data = new int [len];
-                int [] data_v = new int [len_v];
-                String value = null;
+                //String data_v = null;
+
                 String id = "";
                 for(int i=0;i<len;i++){
                     data[i] = r.readUnsignedByte();
                     id = id+"/"+data[i];
-                }
-                for(int j=0;j<len_v;j++){
-                    data_v[j] = r_v.readUnsignedByte();
-                    value = String.valueOf(data_v[j]);
                 }
                 List<String> l = new ArrayList<>();//every row [value, id]
                 l.add(value);l.add(id);
@@ -152,13 +150,14 @@ public class labelMatching {
                     if(result.get(i).getL_ID() != null)
                         id_list = result.get(i).getL_ID();
                     id_list.add(tagList.get(j).get(1));// add corresponding tag id
+                    Collections.sort(id_list);
                     result.get(i).set_LID(id_list);
                     j++;
                 }
                 else if (compare_result < 0){ // table_value < tag_value
                     i++;
                     //previous table value equals current table value
-                    if(table_value.equals(result.get(i).getL_v())){
+                    if(i!= result.size() && table_value.equals(result.get(i).getL_v())){
                         id_list = result.get(i-1).getL_ID();
                         result.get(i).set_LID(id_list);
                         i++;
@@ -181,13 +180,14 @@ public class labelMatching {
                     if(result.get(i).getR_ID() != null)
                         id_list = result.get(i).getR_ID();
                     id_list.add(tagList.get(j).get(1));// add corresponding tag id
+                    Collections.sort(id_list);
                     result.get(i).set_RID(id_list);
                     j++;
                 }
                 else if (compare_result < 0){ // table_value < tag_value
                     i++;
                     //previous table value equals current table value
-                    if(table_value.equals(result.get(i).getR_v())){
+                    if(i!= result.size() && table_value.equals(result.get(i).getR_v())){
                         id_list = result.get(i-1).getR_ID();
                         result.get(i).set_RID(id_list);
                         i++;
