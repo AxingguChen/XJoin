@@ -7,6 +7,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -21,10 +22,11 @@ public class documentAnalysis extends DefaultHandler {
     DTDTable dtdTable;
 
     static String filename;
+    static List<String> tagList = new ArrayList<>();
 
     String ROOT;
 
-    int elementNumber = 0;
+    static int elementNumber = 0;
 
     // Parser calls this once at the beginning of a document
     public void startDocument() throws SAXException {
@@ -71,7 +73,7 @@ public class documentAnalysis extends DefaultHandler {
             tagPathStack.push(child);
             labelPathStack.push(new Integer(-1));
             maxSilblingStack.push(new Integer(-1));
-        }//end if 
+        }//end if
         else {
             String parent = (String) tagPathStack.peek();
             int maxleftSibling = ((Integer) maxSilblingStack.peek()).intValue();
@@ -104,7 +106,7 @@ public class documentAnalysis extends DefaultHandler {
                            String qName)
             throws SAXException {
 
-        String tag = (String) tagPathStack.pop();
+        tagPathStack.pop();
         //outputAssignedValue(tag, eleValueStack);
 
         labelPathStack.pop();
@@ -138,7 +140,8 @@ public class documentAnalysis extends DefaultHandler {
         String tag_v = tag ;
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
-        outputLabel.outputUTF8_v(tag_v, value);
+        if(tagList.contains(tag_v)){
+        outputLabel.outputUTF8_v(tag_v, value);}
     }
 
     void outputAssignedLable(String tag, Stack labelPathStack) {
@@ -147,9 +150,9 @@ public class documentAnalysis extends DefaultHandler {
 
         for (int i = 1; i < labelPathStack.size(); i++)
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
-
-        outputLabel.outputUTF8(tag, labels);
-
+        if(tagList.contains(tag)) {
+            outputLabel.outputUTF8(tag, labels);
+        }
 
     }//end  outputAssignedLable
 
@@ -175,9 +178,10 @@ public class documentAnalysis extends DefaultHandler {
         System.exit(1);
     }
 
-    static public void main(String[] args) throws Exception {
-
+    public void doAnalysis(String left, String right) throws Exception{
         //filename = args[0];
+        tagList.add(left);
+        tagList.add(right);
         filename = "xjoin/src/test.xml";
         if (filename == null) {
             usage();
@@ -204,6 +208,11 @@ public class documentAnalysis extends DefaultHandler {
 
 
         System.out.println("End of document Analysis");
+    }
+
+    static public void main(String[] args) throws Exception {
+        documentAnalysis d = new documentAnalysis();
+        d.doAnalysis("asin","price");
     }
 
 
