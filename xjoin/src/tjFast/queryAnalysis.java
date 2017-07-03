@@ -123,6 +123,7 @@ public class queryAnalysis extends DefaultHandler {
 
             long totalbeginTime = System.currentTimeMillis();
             long loadendTime = 0L;
+            long loadQueryEndTime = 0L;
             long joinbeginTime = 0L;
             long joinendTime = 0L;
             long totalLoadTime = 0L;
@@ -144,22 +145,25 @@ public class queryAnalysis extends DefaultHandler {
             }
 
             List<labelMatching.Match> re = lm.getSolution(tagList.get(0),tagList.get(1)); // get xml value match table result
-            System.out.println(re);
+            loadendTime = System.currentTimeMillis();
+            System.out.println("Total join&sort xml and RDB table data time is " + (loadendTime - loadbeginTime));
+
+            System.out.println("candidate size:"+re.size());
 
             for(int i=0;i<re.size();i++) {
 
                 Hashtable[] alldata = d.loadAllLeafData(re.get(i), DTDInfor,tagList);
 
 
-                System.out.println("Query leaves:" + Query.getLeaves());
+                //System.out.println("Query leaves:" + Query.getLeaves());
 
 
                 loadendTime = System.currentTimeMillis();
-                System.out.println("load data time is " + (loadendTime - loadbeginTime));
+                //System.out.println("load data time is " + (loadendTime - loadbeginTime));
                 totalLoadTime += loadendTime - loadbeginTime;
 
-                //????????join?????
-                System.out.println("begin join !");
+                //join
+                //System.out.println("begin join !");
 
                 joinbeginTime = System.currentTimeMillis();
 
@@ -173,7 +177,7 @@ public class queryAnalysis extends DefaultHandler {
 
             long totalendTime = System.currentTimeMillis();
 
-            System.out.println("Total load data time is " + totalLoadTime);
+            //System.out.println("Total load data time is " + totalLoadTime);
 
             System.out.println("Total join data time is " + totalJoinTime);
 
@@ -214,6 +218,8 @@ public class queryAnalysis extends DefaultHandler {
         System.err.println("Usage: QueryAnalysis <file.xml>");
         System.exit(1);
     }
+
+
 
     static public void main(String[] args) throws Exception {
 
