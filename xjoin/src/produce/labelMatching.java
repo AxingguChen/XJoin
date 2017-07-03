@@ -6,10 +6,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -38,6 +35,36 @@ public class labelMatching {
         String getR_v() { return rightTagValue; }
         public List getL_ID(){ return leftTagID;}
         public List getR_ID(){ return rightTagID;}
+    }
+
+    // this function still need modification to meet analysis the tag name automatically
+    public List<Match> readRDBValue_line(String twigL, String twigR) throws Exception{
+        List<Match> result = new ArrayList<>();
+        String csvFile = "xjoin/src/table.csv";
+        String line = "";
+        String cvsSplitBy = ",";
+        int count = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+
+            while ((line = br.readLine()) != null) {
+
+                // use comma as separator
+                String[] str = line.split(cvsSplitBy);
+
+                List<String> list = Arrays.asList(str[0].split("\\|"));
+                if(str.length > 5 && list.size() > 2){
+                //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
+                count++;
+                result.add(new Match(list.get(0),list.get(2),null,null));
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("valid RDB row:"+count);
+        return  result;
     }
 
     public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
@@ -101,7 +128,7 @@ public class labelMatching {
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
         try{
-            outputLabel.readUTF8_v(tag);
+            //outputLabel.readUTF8_v(tag);
             RandomAccessFile r = null;
             RandomAccessFile r_v = null;
             r = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag,"rw");//read id file
@@ -202,21 +229,58 @@ public class labelMatching {
 
     public List<Match> getSolution(String leftTag, String rightTag)  throws Exception{
         labelMatching m = new labelMatching();
+        //left_tag/right_tag -> left/right id list
+        long loadbeginTime = 0L;
+        long loadendTime = 0L;
+        long loadRDBbeginTime = 0L;
+        long loadRDBendTime = 0L;
+        long sortbeginTime = 0L;
+        long sortendTime = 0L;
+        long totalSortTime = 0L;
+        long matchbeginTime = 0L;
+        long matchendTime = 0L;
+        long totalMatchTime = 0L;
+
+        //Load tag value and id
+
+        loadbeginTime = System.currentTimeMillis();
         List<List<String>> left_tag = m.getTagMap(leftTag);
         List<List<String>> right_tag = m.getTagMap(rightTag);
-        System.out.println(leftTag+" "+left_tag);
-        System.out.println(rightTag+" "+right_tag);
+        loadendTime = System.currentTimeMillis();
+        System.out.println("Total load tag value and ID time is " + (loadendTime-loadbeginTime ));
+        //System.out.println(leftTag+" "+left_tag);
+        //System.out.println(rightTag+" "+right_tag);
 
-        List<Match> result =m.readRDBValue(leftTag,rightTag);
+        //Load RDB value
+        loadRDBbeginTime = System.currentTimeMillis();
+        List<Match> result =m.readRDBValue_line(leftTag,rightTag);
+        loadRDBendTime = System.currentTimeMillis();
+        System.out.println("Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime ));
 
+        sortbeginTime = System.currentTimeMillis();
         Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
         result.sort(comparator);
-        m.matchValue(result,left_tag,"left");
+        sortendTime = System.currentTimeMillis();
+        totalSortTime = sortendTime-sortbeginTime;
 
+        matchbeginTime = System.currentTimeMillis();
+        m.matchValue(result,left_tag,"left");
+        matchendTime = System.currentTimeMillis();
+        totalMatchTime = matchendTime - matchbeginTime;
+
+        sortbeginTime = System.currentTimeMillis();
         comparator = Comparator.comparing(Match::getR_v);
         result.sort(comparator);
+        sortendTime = System.currentTimeMillis();
+        totalSortTime = totalSortTime + sortendTime-sortbeginTime;
+
+        matchbeginTime = System.currentTimeMillis();
         m.matchValue(result,right_tag,"right");
-        System.out.println(result + " size:"+result.size());
+        matchendTime = System.currentTimeMillis();
+        totalMatchTime = totalMatchTime + matchendTime - matchbeginTime;
+        System.out.println("total sort time: " + totalSortTime);
+        System.out.println("total match xml and RDB value time: " + totalMatchTime);
+        //System.out.println(result + " size:"+result.size());
         int i = 0;
         while(i != result.size()){
             //System.out.println("i:"+i+" l:" + result.get(i).getL_ID() + " r:"+result.get(i).getR_ID());
@@ -232,7 +296,8 @@ public class labelMatching {
 
     public static void main(String[] args) throws Exception{
         labelMatching lm = new labelMatching();
-        List<Match> re = lm.getSolution("b","c");
-        System.out.println(re);
+        List<Match> re = lm.getSolution("asin","price");
+        //System.out.println(re);
+        //lm.readRDBValue_line("asin","price");
     }
 }
