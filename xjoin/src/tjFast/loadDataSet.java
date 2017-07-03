@@ -47,7 +47,7 @@ public class loadDataSet {
         int[] intArray = new int[strArray.length];
         for(int i = 0; i < strArray.length; i++) {
             intArray[i] = Integer.parseInt(strArray[i]);
-            System.out.println("hi:"+intArray[i]);
+            //System.out.println("hi:"+intArray[i]);
         }
         return intArray;
     }
