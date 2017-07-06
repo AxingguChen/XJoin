@@ -31,7 +31,7 @@ public class outputLabel {
                 totalLength += outputByte.length;
                 v.addElement(outputByte);
 
-                //System.out.println(i+":"+labels[i]);
+                //System.out.print(" "+labels[i]+" ");
             }//end for
 
             if (totalLength > 250) System.out.println(" Too large label size !!!" + totalLength);

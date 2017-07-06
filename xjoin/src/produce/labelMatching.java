@@ -14,7 +14,7 @@ import java.util.*;
  * Final version of label Matching.
  */
 public class labelMatching {
-
+    static String runningResult="";
     public static class Match {
         private String leftTagValue;
         private String rightTagValue;
@@ -66,6 +66,7 @@ public class labelMatching {
         System.out.println("valid RDB row:"+count);
         return  result;
     }
+
 
     public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
         List<Match> result = new ArrayList<>();
@@ -124,6 +125,25 @@ public class labelMatching {
         else {System.out.println("The twig have not been found in RDB table.");}
         return  result;
     }
+/**
+    public List<Match> buildRDBValue(List<String> tagList) throws  Exception{
+        List<Match> result = new ArrayList<>();
+        for(String tag:tagList){
+        try{
+            RandomAccessFile r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
+            r_v.seek(0);
+            String value = null;
+            while ((value=r_v.readUTF()) != null)
+            {
+                result.add(new Match())
+            }
+        }
+        catch(Exception e){
+            System.out.println("e is:"+e);
+        }}
+        return result;
+    }
+*/
 
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
@@ -155,11 +175,15 @@ public class labelMatching {
         catch(Exception e){
             System.out.println("e is "+e);
         }
+        long sortTagBeginTime = System.currentTimeMillis();
         Collections.sort(tagList,new Comparator<List<String>>(){
             public int compare(List<String> l1, List<String> l2){
                 return l1.get(0).compareTo(l2.get(0));
             }}
         );
+        long sortTagEndTime = System.currentTimeMillis();
+        System.out.println("sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime));
+        runningResult = runningResult +"\r\n"+"sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime);
         return tagList;
     }
 
@@ -177,11 +201,26 @@ public class labelMatching {
                     if(result.get(i).getL_ID() != null)
                         id_list = result.get(i).getL_ID();
                     id_list.add(tagList.get(j).get(1));// add corresponding tag id
-                    Collections.sort(id_list);
+                    //Collections.sort(id_list);
                     result.get(i).set_LID(id_list);
-                    j++;
+                    if(j+1 != tagList.size())
+                        j++;
+                    else {///**
+                        id_list=result.get(i).getL_ID();
+                        if(id_list != null){
+                            Collections.sort(id_list);
+                            result.get(i).set_LID(id_list);
+                        }//*/
+                        i++;
+                    }
                 }
                 else if (compare_result < 0){ // table_value < tag_value
+                    ///**
+                     id_list=result.get(i).getL_ID();
+                    if(id_list != null){
+                        Collections.sort(id_list);
+                        result.get(i).set_LID(id_list);
+                    }//*/
                     i++;
                     //previous table value equals current table value
                     if(i!= result.size() && table_value.equals(result.get(i).getL_v())){
@@ -207,11 +246,26 @@ public class labelMatching {
                     if(result.get(i).getR_ID() != null)
                         id_list = result.get(i).getR_ID();
                     id_list.add(tagList.get(j).get(1));// add corresponding tag id
-                    Collections.sort(id_list);
+                    //Collections.sort(id_list);
                     result.get(i).set_RID(id_list);
-                    j++;
+                    if(j+1 != tagList.size())
+                        j++;
+                    else{///**
+                        id_list=result.get(i).getR_ID();
+                        if(id_list != null){
+                            Collections.sort(id_list);
+                            result.get(i).set_RID(id_list);
+                        }//*/
+                        i++;
+                    }
                 }
                 else if (compare_result < 0){ // table_value < tag_value
+                    ///**
+                     id_list=result.get(i).getR_ID();
+                    if(id_list != null){
+                        Collections.sort(id_list);
+                        result.get(i).set_RID(id_list);
+                    }//*/
                     i++;
                     //previous table value equals current table value
                     if(i!= result.size() && table_value.equals(result.get(i).getR_v())){
@@ -240,6 +294,8 @@ public class labelMatching {
         long matchbeginTime = 0L;
         long matchendTime = 0L;
         long totalMatchTime = 0L;
+        long startTimeWithoutLoadData = 0L;
+        long endTimeWithoutLoadData = 0L;
 
         //Load tag value and id
 
@@ -247,16 +303,21 @@ public class labelMatching {
         List<List<String>> left_tag = m.getTagMap(leftTag);
         List<List<String>> right_tag = m.getTagMap(rightTag);
         loadendTime = System.currentTimeMillis();
-        System.out.println("Total load tag value and ID time is " + (loadendTime-loadbeginTime ));
+        System.out.println("Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime ));
+
+        runningResult=runningResult + "\r\n"+"Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime );
         //System.out.println(leftTag+" "+left_tag);
         //System.out.println(rightTag+" "+right_tag);
 
         //Load RDB value
         loadRDBbeginTime = System.currentTimeMillis();
         List<Match> result =m.readRDBValue_line(leftTag,rightTag);
+        //List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
         System.out.println("Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime ));
+        runningResult=runningResult+"\r\n"+"Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime );
 
+        startTimeWithoutLoadData = System.currentTimeMillis();
         sortbeginTime = System.currentTimeMillis();
         Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
         result.sort(comparator);
@@ -278,8 +339,10 @@ public class labelMatching {
         m.matchValue(result,right_tag,"right");
         matchendTime = System.currentTimeMillis();
         totalMatchTime = totalMatchTime + matchendTime - matchbeginTime;
-        System.out.println("total sort time: " + totalSortTime);
-        System.out.println("total match xml and RDB value time: " + totalMatchTime);
+        System.out.println("total sort table value time: " + totalSortTime);
+        runningResult = runningResult+"\r\n"+"total sort table value time: " + totalSortTime;
+        System.out.println("total match xml and RDB value time(include sort each row ID time): " + totalMatchTime);
+        runningResult = runningResult+"\r\n"+"total match xml and RDB value time(include sort each row ID time): " + totalMatchTime;
         //System.out.println(result + " size:"+result.size());
         int i = 0;
         while(i != result.size()){
@@ -291,11 +354,26 @@ public class labelMatching {
             }
             i++;
         }
+        endTimeWithoutLoadData = System.currentTimeMillis();
+        System.out.println("total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData));
+        runningResult = runningResult+"\r\n"+"total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData);
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/testResult.txt"));
+            out.write("Result\r\n"+runningResult);  //Replace with the string
+            //you are trying to write
+            out.close();
+        }
+        catch (IOException e)
+        {
+            System.out.println("Exception ");
+
+        }
         return result;
     }
 
     public static void main(String[] args) throws Exception{
         labelMatching lm = new labelMatching();
+        //List<Match> re = lm.getSolution("b","c");
         List<Match> re = lm.getSolution("asin","price");
         //System.out.println(re);
         //lm.readRDBValue_line("asin","price");

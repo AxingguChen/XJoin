@@ -17,16 +17,19 @@ public class documentAnalysis extends DefaultHandler {
     private Stack tagPathStack;
     private Stack labelPathStack;
     private Stack maxSilblingStack;
+    //temporary store the element value
     private Stack eleValueStack;
 
     DTDTable dtdTable;
-
+    //xml file name
     static String filename;
+    //store the name of left tag, right tag so that we only write needed value and ID to local file
     static List<String> tagList = new ArrayList<>();
 
     String ROOT;
 
     static int elementNumber = 0;
+    static int validEleNum = 0;
 
     // Parser calls this once at the beginning of a document
     public void startDocument() throws SAXException {
@@ -57,7 +60,7 @@ public class documentAnalysis extends DefaultHandler {
 
             eleValueStack.push(value);
             //System.out.println("value:" + value);
-            outputAssignedValue(tagPathStack.peek().toString(),eleValueStack.peek().toString());
+            outputAssignedValue(tagPathStack.peek().toString(), eleValueStack.peek().toString());
         }
 
     }// end characters
@@ -137,11 +140,13 @@ public class documentAnalysis extends DefaultHandler {
     }//end  showAssignedLable
 
     void outputAssignedValue(String tag, String value) {
-        String tag_v = tag ;
+        String tag_v = tag;
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
-        if(tagList.contains(tag_v)){
-        outputLabel.outputUTF8_v(tag_v, value);}
+        if (tagList.contains(tag_v)) {
+            outputLabel.outputUTF8_v(tag_v, value);
+            validEleNum ++;
+        }
     }
 
     void outputAssignedLable(String tag, Stack labelPathStack) {
@@ -150,8 +155,9 @@ public class documentAnalysis extends DefaultHandler {
 
         for (int i = 1; i < labelPathStack.size(); i++)
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
-        if(tagList.contains(tag)) {
+        if (tagList.contains(tag)) {
             outputLabel.outputUTF8(tag, labels);
+            validEleNum ++;
         }
 
     }//end  outputAssignedLable
@@ -178,7 +184,7 @@ public class documentAnalysis extends DefaultHandler {
         System.exit(1);
     }
 
-    public void doAnalysis(String left, String right) throws Exception{
+    public void doAnalysis(String left, String right) throws Exception {
         //filename = args[0];
         tagList.add(left);
         tagList.add(right);
@@ -212,7 +218,9 @@ public class documentAnalysis extends DefaultHandler {
 
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
+        //d.doAnalysis("b","c");
         d.doAnalysis("asin","price");
+        System.out.println("Valid element:"+validEleNum);
     }
 
 
