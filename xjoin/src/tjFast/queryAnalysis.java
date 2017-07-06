@@ -136,7 +136,7 @@ public class queryAnalysis extends DefaultHandler {
 
             long loadbeginTime = System.currentTimeMillis();
 
-            //change by myself
+
             List<Hashtable[]> ALLData = new ArrayList<Hashtable[]>();
             labelMatching lm = new labelMatching();
             List<String> tagList = new ArrayList<>();
@@ -148,7 +148,9 @@ public class queryAnalysis extends DefaultHandler {
             loadendTime = System.currentTimeMillis();
             System.out.println("Total join&sort xml and RDB table data time is " + (loadendTime - loadbeginTime));
 
-            System.out.println("candidate size:"+re.size());
+            System.out.println("candidate:"+re);
+            // start to calculate the running time
+            //long totalbeginTime = System.currentTimeMillis();
 
             for(int i=0;i<re.size();i++) {
 

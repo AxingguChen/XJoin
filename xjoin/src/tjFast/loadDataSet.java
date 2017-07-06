@@ -31,7 +31,7 @@ public class loadDataSet {
         allData.put(tagList.get(1), r[1]);
 
 
-        Hashtable[] result = new Hashtable[2];//ע��[0] �Ƿ�����ֵ,��	[1]��tagֵ
+        Hashtable[] result = new Hashtable[2];//???[0] ????????,??	[1]??tag?
         result[0] = allOriginalData;
         result[1] = allData;
 
@@ -53,7 +53,7 @@ public class loadDataSet {
     }
 
 
-        Vector[] loadData(String tag, List idList, DTDTable DTDInfor) {    //ע��loaddata[0] �Ƿ�����ֵ,��	loaddata[1]��tagֵ
+        Vector[] loadData(String tag, List idList, DTDTable DTDInfor) {    //???loaddata[0] ????????,??	loaddata[1]??tag?
 
         Vector[] loadedData = new Vector[2];
         loadedData[0] = new Vector();
@@ -147,7 +147,7 @@ public class loadDataSet {
 
     }//end convertToIntegers
 
-    //���������Ҫ��������һ������dtdtable �������������б�������������һ����Ӧ�Ĺ�ϵ, store them in variable map in class DTDTAble��
+    //?????????????????????????dtdtable ?????????????��???????????????????????, store them in variable map in class DTDTAble??
 
     static DTDTable produceDTDInformation(String basicDocuemnt) {
 
