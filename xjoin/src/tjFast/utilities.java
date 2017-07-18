@@ -80,19 +80,34 @@ public class utilities {
 	}//end DebugPrintIntArray
 	
 	static void PrintIntArray (int [] s,String promote){
-		
-		if  (s==null ) return ;
-		
-		
 		System.out.print(promote+":  " );
 		for (int i=0;i<s.length;i++)
 			System.out.print(s[i]+" ");
-		System.out.println("Finished! ");
-	
-	
-	}//end DebugPrintIntArray
-	
-	
+		System.out.print("  " );
+	}//end PrintIntArray
+
+	static void PrintIntArrayList(List<int[]> list,String promote){
+		System.out.print(promote+":  " );
+		for(int[] l:list){
+			for (int i=0;i<l.length;i++)
+				System.out.print(l[i]+" ");
+			System.out.print(",");
+		}
+	}
+
+	static void PrintPair(List<int[]> c_list,String currentNode, List<int[]> p_list, String pairNode){
+		int pairCount = 0;
+		for(int[] c_l:c_list){
+			for(int[] p_l:p_list){
+				PrintIntArray(c_l,currentNode);
+				PrintIntArray(p_l,pairNode);
+				pairCount ++;
+				System.out.println();
+			}
+		}
+		System.out.println("["+pairCount+" pair]. ");
+	}
+
 	static void DebugPrint (String s){
 		
 		if (Debug)

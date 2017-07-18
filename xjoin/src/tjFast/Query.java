@@ -431,6 +431,8 @@ public class Query {
 		return leaves;
 		
 	}//end getLeaves()
+
+
 	
 	 static String  getLeafBranchNode(String qleaf){
 	 	

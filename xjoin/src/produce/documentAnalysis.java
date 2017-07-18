@@ -8,6 +8,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 
@@ -145,7 +146,6 @@ public class documentAnalysis extends DefaultHandler {
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
         if (tagList.contains(tag_v)) {
             outputLabel.outputUTF8_v(tag_v, value);
-            validEleNum ++;
         }
     }
 
@@ -184,10 +184,9 @@ public class documentAnalysis extends DefaultHandler {
         System.exit(1);
     }
 
-    public void doAnalysis(String left, String right) throws Exception {
+    public void doAnalysis() throws Exception {
         //filename = args[0];
-        tagList.add(left);
-        tagList.add(right);
+
         filename = "xjoin/src/test.xml";
         if (filename == null) {
             usage();
@@ -219,7 +218,12 @@ public class documentAnalysis extends DefaultHandler {
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
         //d.doAnalysis("b","c");
-        d.doAnalysis("asin","price");
+        tagList.addAll(Arrays.asList("a","b","c"));
+        //delete previous files
+        File directory = new File("xjoin/src/produce/outputData");
+        for(File f: directory.listFiles())
+            f.delete();
+        d.doAnalysis();
         System.out.println("Valid element:"+validEleNum);
     }
 

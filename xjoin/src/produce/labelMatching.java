@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class labelMatching {
     static String runningResult="";
+    static int readRDBcount = 0;
     public static class Match {
         private String leftTagValue;
         private String rightTagValue;
@@ -43,19 +44,19 @@ public class labelMatching {
         String csvFile = "xjoin/src/table.csv";
         String line = "";
         String cvsSplitBy = ",";
-        int count = 0;
+
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
 
             while ((line = br.readLine()) != null) {
 
                 // use comma as separator
-                String[] str = line.split(cvsSplitBy);
+                //String[] str = line.split(cvsSplitBy);
 
-                List<String> list = Arrays.asList(str[0].split("\\|"));
-                if(str.length > 5 && list.size() > 2){
-                //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
-                count++;
-                result.add(new Match(list.get(0),list.get(2),null,null));
+                List<String> list = Arrays.asList(line.split("\\|"));
+                if(list.size() > 2){
+                    //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
+                    readRDBcount++;
+                    result.add(new Match(list.get(0),list.get(2),null,null));
                 }
             }
 
@@ -63,7 +64,7 @@ public class labelMatching {
             e.printStackTrace();
         }
 
-        System.out.println("valid RDB row:"+count);
+        ////System.out.println("valid read RDB row:"+readRDBcount);
         return  result;
     }
 
@@ -125,28 +126,68 @@ public class labelMatching {
         else {System.out.println("The twig have not been found in RDB table.");}
         return  result;
     }
-/**
-    public List<Match> buildRDBValue(List<String> tagList) throws  Exception{
+
+     public List<Match> buildRDBValue(String twigL, String twigR) throws  Exception{
+     List<Match> result = new ArrayList<>();
+         int count = 0;
+     try{
+     RandomAccessFile r_vl = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigL+"_v","rw");//read value file
+         RandomAccessFile r_vr = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigR+"_v","rw");//read value file
+         r_vl.seek(0);
+         r_vr.seek(0);
+     String valuel = null;
+     String valuer = null;
+
+     while ( (valuel=r_vl.readUTF()) != null && (valuer=r_vr.readUTF()) != null )
+     {
+         valuel = valuel+"_"+count;
+         valuer = valuer+"_"+count;
+        result.add(new Match(valuel,valuer,null,null));
+        count++;
+        //System.out.println("build value:"+valuel + " "+valuer);
+     }
+
+     }
+     catch (EOFException eofex) {
+         //do nothing
+     }
+     catch(Exception e){
+     System.out.println("e is:"+e);
+     }
+     ////System.out.println("original build RDB value count:"+count);
+     return result;
+     }
+
+
+    public List<Match> buildRDBValue_100(){
         List<Match> result = new ArrayList<>();
-        for(String tag:tagList){
-        try{
-            RandomAccessFile r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
-            r_v.seek(0);
-            String value = null;
-            while ((value=r_v.readUTF()) != null)
-            {
-                result.add(new Match())
-            }
+
+        result.add(new Match("B001CXLSSW","37.94",null,null));
+        result.add(new Match("B00IL2QNQO","38.97",null,null));
+        result.add(new Match("B00FR84QG4","59.95",null,null));
+        result.add(new Match("B001QBZIMC","6.93",null,null));
+        result.add(new Match("B000UUBFZY","9.99",null,null));
+        result.add(new Match("B0093Q8JCI","22.9",null,null));
+        result.add(new Match("B004J41HQY","85.55",null,null));
+        result.add(new Match("B000NMBLDU","14.95",null,null));
+        result.add(new Match("B001BS98N0","11.95",null,null));
+        result.add(new Match("B005G2G2OU","172.95",null,null));
+        int count;
+        List a = new ArrayList();
+        a.add("aaaa");
+        for(count=10; count<100;count++){
+        result.add(new Match("aaa","bbb",a,null));
         }
-        catch(Exception e){
-            System.out.println("e is:"+e);
-        }}
+
+
+        ////System.out.println("original build RDB value count:"+count);
         return result;
     }
-*/
+
 
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
+        int m=0;
         try{
             //outputLabel.readUTF8_v(tag);
             RandomAccessFile r = null;
@@ -166,8 +207,11 @@ public class labelMatching {
                     id = id+"/"+data[i];
                 }
                 List<String> l = new ArrayList<>();//every row [value, id]
+                //value = value + "_"+m;
+                m++;
                 l.add(value);l.add(id);
                 tagList.add(l);//value, id
+
             }}
         catch (EOFException eofex) {
             //do nothing
@@ -182,7 +226,8 @@ public class labelMatching {
             }}
         );
         long sortTagEndTime = System.currentTimeMillis();
-        System.out.println("sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime));
+        ////System.out.println("sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime));
+        ////System.out.println("tag row:"+m);
         runningResult = runningResult +"\r\n"+"sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime);
         return tagList;
     }
@@ -216,7 +261,7 @@ public class labelMatching {
                 }
                 else if (compare_result < 0){ // table_value < tag_value
                     ///**
-                     id_list=result.get(i).getL_ID();
+                    id_list=result.get(i).getL_ID();
                     if(id_list != null){
                         Collections.sort(id_list);
                         result.get(i).set_LID(id_list);
@@ -261,7 +306,7 @@ public class labelMatching {
                 }
                 else if (compare_result < 0){ // table_value < tag_value
                     ///**
-                     id_list=result.get(i).getR_ID();
+                    id_list=result.get(i).getR_ID();
                     if(id_list != null){
                         Collections.sort(id_list);
                         result.get(i).set_RID(id_list);
@@ -303,7 +348,7 @@ public class labelMatching {
         List<List<String>> left_tag = m.getTagMap(leftTag);
         List<List<String>> right_tag = m.getTagMap(rightTag);
         loadendTime = System.currentTimeMillis();
-        System.out.println("Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime ));
+        ////System.out.println("Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime ));
 
         runningResult=runningResult + "\r\n"+"Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime );
         //System.out.println(leftTag+" "+left_tag);
@@ -311,11 +356,15 @@ public class labelMatching {
 
         //Load RDB value
         loadRDBbeginTime = System.currentTimeMillis();
-        List<Match> result =m.readRDBValue_line(leftTag,rightTag);
-        //List<Match> result =m.readRDBValue(leftTag,rightTag);
+        //List<Match> result =m.readRDBValue_line(leftTag,rightTag);
+        //List<Match> result =m.buildRDBValue(leftTag,rightTag);
+        List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
-        System.out.println("Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime ));
+        //System.out.println("valid read RDB row:"+readRDBcount);
+        ////System.out.println("Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime ));
         runningResult=runningResult+"\r\n"+"Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime );
+
+        System.out.println(result);
 
         startTimeWithoutLoadData = System.currentTimeMillis();
         sortbeginTime = System.currentTimeMillis();
@@ -339,23 +388,34 @@ public class labelMatching {
         m.matchValue(result,right_tag,"right");
         matchendTime = System.currentTimeMillis();
         totalMatchTime = totalMatchTime + matchendTime - matchbeginTime;
-        System.out.println("total sort table value time: " + totalSortTime);
+
+        System.out.println(result);
+
+        ////System.out.println("total sort table value time: " + totalSortTime);
         runningResult = runningResult+"\r\n"+"total sort table value time: " + totalSortTime;
-        System.out.println("total match xml and RDB value time(include sort each row ID time): " + totalMatchTime);
+
+        ////System.out.println("total match xml and RDB value time(include sort each row ID time): " + totalMatchTime);
         runningResult = runningResult+"\r\n"+"total match xml and RDB value time(include sort each row ID time): " + totalMatchTime;
         //System.out.println(result + " size:"+result.size());
         int i = 0;
+        int remove_count=0;
+        Long removeStartTime = System.currentTimeMillis();
         while(i != result.size()){
             //System.out.println("i:"+i+" l:" + result.get(i).getL_ID() + " r:"+result.get(i).getR_ID());
             if(result.get(i).getL_ID() == null || result.get(i).getR_ID() == null)
             {
+                //System.out.println("remove result:"+result.get(i).getL_v()+" "+result.get(i).getR_v());
+                //System.out.println("ID list:"+result.get(i).getL_ID()+" "+result.get(i).getR_ID());
                 result.remove(i);
                 i--;
+                remove_count++;
             }
             i++;
         }
         endTimeWithoutLoadData = System.currentTimeMillis();
-        System.out.println("total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData));
+        ////System.out.println("remove ID empty row time:"+(endTimeWithoutLoadData-removeStartTime));
+        runningResult = runningResult+"\r\n"+"remove ID empty row time:"+(endTimeWithoutLoadData-removeStartTime);
+        ////System.out.println("total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData));
         runningResult = runningResult+"\r\n"+"total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData);
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/testResult.txt"));
@@ -368,13 +428,16 @@ public class labelMatching {
             System.out.println("Exception ");
 
         }
+        runningResult = runningResult+"\r\n"+"candidate size:"+result.size();
+        ////System.out.println("remove count:"+remove_count+ " after remove candidate size:"+result.size());
+        System.out.println(result);
         return result;
     }
 
     public static void main(String[] args) throws Exception{
         labelMatching lm = new labelMatching();
-        //List<Match> re = lm.getSolution("b","c");
-        List<Match> re = lm.getSolution("asin","price");
+        List<Match> re = lm.getSolution("b","c");
+        //List<Match> re = lm.getSolution("asin","price");
         //System.out.println(re);
         //lm.readRDBValue_line("asin","price");
     }

@@ -1,5 +1,4 @@
 package tjFast;
-
 import javax.xml.parsers.*;
 
 import org.xml.sax.*;
@@ -8,11 +7,10 @@ import org.xml.sax.helpers.*;
 import java.util.*;
 import java.io.*;
 
-import produce.labelMatching;
-
-
-public class queryAnalysis extends DefaultHandler {
-
+/**
+ * Created by zzzhou on 2017-07-18.
+ */
+public class naiveSolution extends DefaultHandler {
     Hashtable twigTagNames;
 
     static String filename;
@@ -103,79 +101,56 @@ public class queryAnalysis extends DefaultHandler {
 
         utilities.DebugPrintln("Query root is " + Query.getRoot());
 
+
+    	 /*Hashtable h =Query.calculateBranchPosition();
+
+
+   	Enumeration e = h.keys();
+    	while (e.hasMoreElements())
+    	{	String s = (String)e.nextElement();
+    		int [] pos = (int [] )h.get(s);
+    		utilities.DebugPrintln(s+ "position is "+pos[0]+" ; "+pos[1]);
+    	}//end while
+    	*/
         System.out.println("begin analysis document !");
 
         try { // ???????try????????????????
 
-            //?????????§Ö??????UTF8?????????????????—¨
+            //?????????Ðµ??????UTF8?????????????????æ£¬
             DTDTable DTDInfor = loadDataSet.produceDTDInformation(basicDocuemnt);
 
             long totalbeginTime = System.currentTimeMillis();
-            long loadendTime = 0L;
-            long loadQueryEndTime = 0L;
-            long joinbeginTime = 0L;
-            long joinendTime = 0L;
-            long totalLoadTime = 0L;
-            long totalJoinTime = 0L;
 
-            Query.preComputing(DTDInfor); //???????????§Þ????§»Query???????????????
+
+            Query.preComputing(DTDInfor); //???????????Ð¼????Ð©Query???????????????
 
             loadDataSet d = new loadDataSet();
             System.out.println("begin load data !");
 
 
-            List<Hashtable[]> ALLData = new ArrayList<Hashtable[]>();
-            labelMatching lm = new labelMatching();
-            List<String> tagList = new ArrayList<>();
-            for(int i=0;i< Query.getLeaves().size();i++){
-                tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
-            }
+            long loadbeginTime = System.currentTimeMillis();
 
-            List<labelMatching.Match> re = lm.getSolution(tagList.get(0),tagList.get(1)); // get xml value match table result
+            Hashtable [] alldata = d.loadAllLeafData_naive (Query.getLeaves(),DTDInfor);
 
-            //System.out.println("candidate:"+re);
-            // start to calculate the running time
-            //long totalbeginTime = System.currentTimeMillis();
-            //long tjFastbeginTime = System.currentTimeMillis();
-            //long tjFastbyAddTime = 0L;
-            for(int i=0;i<re.size();i++) {
+            long loadendTime = System.currentTimeMillis();
 
-                long loadbeginTime = System.currentTimeMillis();
-                Hashtable[] alldata = d.loadAllLeafData(re.get(i), DTDInfor,tagList);
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½joinï¿½Ä¹ï¿½ï¿½ï¿½
+            System.out.println( "begin join !");
 
+            long joinbeginTime = System.currentTimeMillis();
 
-                //System.out.println("Query leaves:" + Query.getLeaves());
+            TwigSet join = new TwigSet(DTDInfor,alldata[1],alldata[0] );
 
+            join.beginJoin();
 
-                loadendTime = System.currentTimeMillis();
-                //System.out.println("load data time is " + (loadendTime - loadbeginTime));
-                totalLoadTime += loadendTime - loadbeginTime;
+            long joinendTime = System.currentTimeMillis();
 
-                //join
-                //System.out.println("begin join !");
-
-                joinbeginTime = System.currentTimeMillis();
-
-                TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
-
-                join.beginJoin();
-                joinendTime = System.currentTimeMillis();
-                //System.out.println("join data time is " + (joinendTime - joinbeginTime));
-                totalJoinTime += joinendTime - joinbeginTime;
-                //tjFastbyAddTime = tjFastbyAddTime + joinendTime -loadbeginTime;
-            }
-            long tjFastEndTime = System.currentTimeMillis();
             long totalendTime = System.currentTimeMillis();
+            System.out.println("load data time is "+(loadendTime-loadbeginTime));
 
-            //System.out.println("Total tjFast time is " + (tjFastEndTime-tjFastbeginTime));
-            //System.out.println("Total tjFast by add time is " + tjFastbyAddTime);
+            System.out.println("join data time is "+(joinendTime-joinbeginTime));
 
-
-            ////System.out.println("Total tjFast load data time is " + totalLoadTime);
-
-            ////System.out.println("Total join data time is " + totalJoinTime);
-
-            ////System.out.println("Total running time is " + (totalendTime - totalbeginTime));
+            System.out.println("Total running time is "+(totalendTime-totalbeginTime));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -241,7 +216,7 @@ public class queryAnalysis extends DefaultHandler {
         XMLReader xmlReader = saxParser.getXMLReader();
 
         // Set the ContentHandler of the XMLReader
-        xmlReader.setContentHandler(new queryAnalysis());
+        xmlReader.setContentHandler(new naiveSolution());
 
         // Set an ErrorHandler before parsing
         xmlReader.setErrorHandler(new MyErrorHandler(System.err));

@@ -14,13 +14,91 @@ public class loadDataSet {
     int totalElement = 0;
     labelMatching lm = new labelMatching();
 
+    Hashtable[] loadAllLeafData_naive(Vector leaves,DTDTable DTDInfor) throws Exception{
+
+
+        allData = new Hashtable () ;
+
+        allOriginalData = new Hashtable () ;
+
+
+        for(int i=0;i<leaves.size();i++){
+            Vector v [] = loadData_naive((String)leaves.elementAt(i),DTDInfor);
+            allOriginalData.put( (String)leaves.elementAt(i), v[0]);
+            allData.put( (String)leaves.elementAt(i), v[1]);
+
+        }//end for
+
+        Hashtable [] result = new Hashtable [2];//???[0] ????????,??	[1]??tag?
+        result[0] = allOriginalData;
+        result[1] = allData;
+
+
+        System.out.println("Total number of elements scanned is "+totalElement);
+        return result;
+
+    }//end loadAllLeafData
+
+    Vector []  loadData_naive (String tag,DTDTable DTDInfor ){	//???loaddata[0] ????????,??	loaddata[1]??tag?
+
+
+        Vector [] loadedData = new Vector [2];
+        loadedData[0] = new Vector();
+        loadedData[1] = new Vector();
+
+        RandomAccessFile r = null;
+
+        try{
+            r = new   RandomAccessFile("xjoin/src/produce/outputData\\"+tag,"rw");
+
+            while (true)
+            { 	byte len = r.readByte();
+                //System.out.println("length is "+len);
+                int [] data = new int [len];
+                for(int i=0;i<len;i++)
+                    data[i] = r.readUnsignedByte();
+
+                int [] result = convertToIntegers (data);
+
+                int [] tagInt = DTDInfor.getAllTags(result, DTDInfor.root);
+
+			/*for(int i=0;i<tagInt.length;i++)
+				System.out.print(" "+tagInt[i]);
+			System.out.println();*/
+
+                loadedData[0].addElement(result);
+                loadedData[1].addElement(tagInt);
+
+                totalElement++;
+
+            }//end while
+
+        }catch(Exception e){
+            System.out.println("e is "+e);
+        }//end catch
+        finally {
+            try {r.close();} catch (Exception e) {} }//end finally
+
+        int [] terminal = {utilities.MAXNUM};
+
+        loadedData[0].addElement(terminal);
+        loadedData[1].addElement(terminal);
+
+        return loadedData ;
+
+    }
+
+
+
     Hashtable[] loadAllLeafData(Match m, DTDTable DTDInfor,List<String> tagList) throws Exception{
 
 
         allData = new Hashtable();
 
         allOriginalData = new Hashtable();
-        System.out.println("Row:"+m.toString());
+        //////
+        //System.out.println("Row:"+m.toString());
+
         //tag list -- b,c (only consider the simplest case)
         Vector l[] = loadData(tagList.get(0), m.getL_ID(), DTDInfor);
         allOriginalData.put(tagList.get(0), l[0]);
@@ -35,8 +113,8 @@ public class loadDataSet {
         result[0] = allOriginalData;
         result[1] = allData;
 
-
-        System.out.println("Total number of elements scanned is " + totalElement);
+        //////
+        //System.out.println("Total number of elements scanned is " + totalElement);
         return result;
 
     }//end loadAllLeafData
@@ -60,7 +138,7 @@ public class loadDataSet {
         loadedData[1] = new Vector();
 
         try {
-            System.out.println("now load data:" + tag);
+            //System.out.println("now load data:" + tag);
             for(int i=0;i< idList.size();i++) {
 
                 int[] data = convertStrToInt(idList.get(i).toString());
