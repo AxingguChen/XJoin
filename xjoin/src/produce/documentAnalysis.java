@@ -2,6 +2,7 @@ package produce;
 
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
+import tjFast.Query;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -217,8 +218,8 @@ public class documentAnalysis extends DefaultHandler {
 
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
-        //d.doAnalysis("b","c");
-        tagList.addAll(Arrays.asList("a","b","c"));
+        //tagList.addAll(Arrays.asList("a","b","c","d","e"));
+        tagList.addAll(Arrays.asList("Invoices","Invoice","asin","price","Orderline"));
         //delete previous files
         File directory = new File("xjoin/src/produce/outputData");
         for(File f: directory.listFiles())

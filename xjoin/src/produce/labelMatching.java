@@ -5,6 +5,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import tjFast.*;
 
 import java.io.*;
 import java.util.*;
@@ -196,16 +197,17 @@ public class labelMatching {
             r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
             r_v.seek(0);
             String value = null;
-            while ((value=r_v.readUTF()) != null)
-            { 	byte len = r.readByte();
-                int [] data = new int [len];
-                //String data_v = null;
-
+            loadDataSet lds = new loadDataSet();
+            while ((value = r_v.readUTF()) != null) {
+                byte len = r.readByte();
+                int[] data = new int[len];
                 String id = "";
-                for(int i=0;i<len;i++){
+                for (int i = 0; i < len; i++) {
                     data[i] = r.readUnsignedByte();
-                    id = id+"/"+data[i];
+                    id = id + "/" + data[i];
                 }
+                int [] result = convertToIntegers(data);
+                id = utilities.ArrayToString(result);
                 List<String> l = new ArrayList<>();//every row [value, id]
                 //value = value + "_"+m;
                 m++;
@@ -231,6 +233,129 @@ public class labelMatching {
         runningResult = runningResult +"\r\n"+"sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime);
         return tagList;
     }
+    int[] convertToIntegers(int[] data) {
+
+        int inputi = 0, outputi = 0;
+
+        int output[] = new int[data.length];
+
+        while (inputi < data.length)
+            if (data[inputi] < 128) {
+                int a[] = new int[1];
+                a[0] = data[inputi++];
+                output[outputi++] = UTF8ToInteger(a);
+            } else if (data[inputi] < 224) {
+                int a[] = new int[2];
+                a[0] = data[inputi++];
+                a[1] = data[inputi++];
+                output[outputi++] = UTF8ToInteger(a);
+            } else if (data[inputi] < 240) {
+                int a[] = new int[3];
+                a[0] = data[inputi++];
+                a[1] = data[inputi++];
+                a[2] = data[inputi++];
+                output[outputi++] = UTF8ToInteger(a);
+            } else if (data[inputi] < 248) {
+                int a[] = new int[4];
+                a[0] = data[inputi++];
+                a[1] = data[inputi++];
+                a[2] = data[inputi++];
+                a[3] = data[inputi++];
+                output[outputi++] = UTF8ToInteger(a);
+            } else if (data[inputi] < 252) {
+                int a[] = new int[5];
+                a[0] = data[inputi++];
+                a[1] = data[inputi++];
+                a[2] = data[inputi++];
+                a[3] = data[inputi++];
+                a[4] = data[inputi++];
+                output[outputi++] = UTF8ToInteger(a);
+            }
+        int[] result = new int[outputi];
+
+        for (int i = 0; i < outputi; i++)
+            result[i] = output[i];
+
+        return result;
+
+    }//end convertToIntegers
+
+
+    static int UTF8ToInteger (int []  bytes){
+
+        if (bytes.length == 1)
+        {
+            return bytes[0];
+        }//end
+        else if (bytes.length == 2)
+        {
+            bytes[0]= bytes[0] ^ 192 ;
+            bytes[1]= bytes[1] ^ 128 ;
+            bytes[0]= bytes[0] << 6 ;
+
+            return (bytes[0] | bytes[1]);
+
+        }//end else
+        else if (bytes.length == 3)
+        {	bytes[0]= bytes[0] ^ 224 ;
+            bytes[1]= bytes[1] ^ 128 ;
+            bytes[2]= bytes[2] ^ 128 ;
+
+            bytes[1]= bytes[1] << 6 ;
+
+            bytes[1] = bytes[1] | bytes[2];
+
+            bytes[0]= bytes[0] << 12 ;
+
+
+            return (bytes[0] | bytes[1]);
+        }//end else
+        else if (bytes.length == 4)
+        {	bytes[0]= bytes[0] ^ 240 ;
+            bytes[1]= bytes[1] ^ 128 ;
+            bytes[2]= bytes[2] ^ 128 ;
+            bytes[3]= bytes[3] ^ 128 ;
+
+            bytes[2]= bytes[2] << 6 ;
+
+            bytes[2] = bytes[2] | bytes[3];
+
+            bytes[1]= bytes[1] << 12 ;
+
+            bytes[1] = bytes[1] | bytes[2];
+
+            bytes[0]= bytes[0] << 18 ;
+
+            return (bytes[0] | bytes[1]);
+
+        }//end else
+        else if (bytes.length == 5)
+        {	bytes[0]= bytes[0] ^ 248 ;
+            bytes[1]= bytes[1] ^ 128 ;
+            bytes[2]= bytes[2] ^ 128 ;
+            bytes[3]= bytes[3] ^ 128 ;
+            bytes[4]= bytes[4] ^ 128 ;
+
+            bytes[3]= bytes[3] << 6 ;
+
+            bytes[3] = bytes[3] | bytes[4];
+
+            bytes[2]= bytes[2] << 12 ;
+
+            bytes[2] = bytes[2] | bytes[3];
+
+            bytes[1]= bytes[1] << 18 ;
+
+            bytes[1] = bytes[1] | bytes[2];
+
+            bytes[0]= bytes[0] << 24 ;
+
+            return (bytes[0] | bytes[1]);
+
+        }//end else
+
+        return 0;
+    }//end convertToUTF8
 
     // tFlag{left,right} -> left column value or right column value of table
     public void matchValue(List<Match> result, List<List<String>> tagList, String tFlag){
@@ -343,7 +468,7 @@ public class labelMatching {
         long endTimeWithoutLoadData = 0L;
 
         //Load tag value and id
-
+        //System.out.println("load tag map");
         loadbeginTime = System.currentTimeMillis();
         List<List<String>> left_tag = m.getTagMap(leftTag);
         List<List<String>> right_tag = m.getTagMap(rightTag);
@@ -355,17 +480,19 @@ public class labelMatching {
         //System.out.println(rightTag+" "+right_tag);
 
         //Load RDB value
+        //System.out.println("load RDB value");
         loadRDBbeginTime = System.currentTimeMillis();
-        //List<Match> result =m.readRDBValue_line(leftTag,rightTag);
+        List<Match> result =m.readRDBValue_line(leftTag,rightTag);
         //List<Match> result =m.buildRDBValue(leftTag,rightTag);
-        List<Match> result =m.readRDBValue(leftTag,rightTag);
+        //List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
         //System.out.println("valid read RDB row:"+readRDBcount);
         ////System.out.println("Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime ));
         runningResult=runningResult+"\r\n"+"Total load RDB tag value time is " + (loadRDBendTime-loadRDBbeginTime );
 
-        System.out.println(result);
+        //System.out.println(result);
 
+        //System.out.println("Start match, sort left");
         startTimeWithoutLoadData = System.currentTimeMillis();
         sortbeginTime = System.currentTimeMillis();
         Comparator<Match> comparator = Comparator.comparing(Match::getL_v);
@@ -373,23 +500,24 @@ public class labelMatching {
         sortendTime = System.currentTimeMillis();
         totalSortTime = sortendTime-sortbeginTime;
 
+        //System.out.println("match left");
         matchbeginTime = System.currentTimeMillis();
         m.matchValue(result,left_tag,"left");
         matchendTime = System.currentTimeMillis();
         totalMatchTime = matchendTime - matchbeginTime;
-
+        //System.out.println("Start sort right");
         sortbeginTime = System.currentTimeMillis();
         comparator = Comparator.comparing(Match::getR_v);
         result.sort(comparator);
         sortendTime = System.currentTimeMillis();
         totalSortTime = totalSortTime + sortendTime-sortbeginTime;
-
+        //System.out.println("match right");
         matchbeginTime = System.currentTimeMillis();
         m.matchValue(result,right_tag,"right");
         matchendTime = System.currentTimeMillis();
         totalMatchTime = totalMatchTime + matchendTime - matchbeginTime;
 
-        System.out.println(result);
+        //System.out.println(result);
 
         ////System.out.println("total sort table value time: " + totalSortTime);
         runningResult = runningResult+"\r\n"+"total sort table value time: " + totalSortTime;
@@ -399,6 +527,7 @@ public class labelMatching {
         //System.out.println(result + " size:"+result.size());
         int i = 0;
         int remove_count=0;
+        //System.out.println("start remove candidates");
         Long removeStartTime = System.currentTimeMillis();
         while(i != result.size()){
             //System.out.println("i:"+i+" l:" + result.get(i).getL_ID() + " r:"+result.get(i).getR_ID());
@@ -417,6 +546,8 @@ public class labelMatching {
         runningResult = runningResult+"\r\n"+"remove ID empty row time:"+(endTimeWithoutLoadData-removeStartTime);
         ////System.out.println("total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData));
         runningResult = runningResult+"\r\n"+"total get candidate time without load data: " + (endTimeWithoutLoadData-startTimeWithoutLoadData);
+        runningResult = runningResult+"\r\n"+"candidate size:"+result.size();
+        //System.out.println("write result to file");
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/testResult.txt"));
             out.write("Result\r\n"+runningResult);  //Replace with the string
@@ -428,9 +559,9 @@ public class labelMatching {
             System.out.println("Exception ");
 
         }
-        runningResult = runningResult+"\r\n"+"candidate size:"+result.size();
+        //System.out.println("return !");
         ////System.out.println("remove count:"+remove_count+ " after remove candidate size:"+result.size());
-        System.out.println(result);
+        System.out.println(runningResult);
         return result;
     }
 
