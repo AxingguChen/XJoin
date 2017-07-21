@@ -138,8 +138,9 @@ public class queryAnalysis extends DefaultHandler {
             //long totalbeginTime = System.currentTimeMillis();
             //long tjFastbeginTime = System.currentTimeMillis();
             //long tjFastbyAddTime = 0L;
+            //System.out.println("start multi-times tjFast");
+            int solutionCount = 0;
             for(int i=0;i<re.size();i++) {
-
                 long loadbeginTime = System.currentTimeMillis();
                 Hashtable[] alldata = d.loadAllLeafData(re.get(i), DTDInfor,tagList);
 
@@ -158,7 +159,7 @@ public class queryAnalysis extends DefaultHandler {
 
                 TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
 
-                join.beginJoin();
+                solutionCount = solutionCount+join.beginJoin();
                 joinendTime = System.currentTimeMillis();
                 //System.out.println("join data time is " + (joinendTime - joinbeginTime));
                 totalJoinTime += joinendTime - joinbeginTime;
@@ -166,16 +167,16 @@ public class queryAnalysis extends DefaultHandler {
             }
             long tjFastEndTime = System.currentTimeMillis();
             long totalendTime = System.currentTimeMillis();
-
+            System.out.println("solutionCount:"+solutionCount);
             //System.out.println("Total tjFast time is " + (tjFastEndTime-tjFastbeginTime));
             //System.out.println("Total tjFast by add time is " + tjFastbyAddTime);
 
 
-            ////System.out.println("Total tjFast load data time is " + totalLoadTime);
+            System.out.println("Total tjFast load data time is " + totalLoadTime);
 
-            ////System.out.println("Total join data time is " + totalJoinTime);
+            System.out.println("Total tjFast join data time is " + totalJoinTime);
 
-            ////System.out.println("Total running time is " + (totalendTime - totalbeginTime));
+            System.out.println("Total running time is " + (totalendTime - totalbeginTime));
 
         } catch (Exception e) {
             e.printStackTrace();

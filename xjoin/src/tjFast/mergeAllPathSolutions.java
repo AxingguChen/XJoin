@@ -6,7 +6,7 @@ import java.io.*;
 
 public class mergeAllPathSolutions  {
 		
-		
+	static List<List<String>> solutionPairIDList = new ArrayList<>();
 	static int getPathNumber(Hashtable finalResults,Vector leaves){
 		
 		int numberOfleaves = leaves.size();
@@ -25,8 +25,53 @@ public class mergeAllPathSolutions  {
 		return pathnumber;
 		
 	}//end mergeOneBranch
+	static int solutionCount=0;
+	static int mergeOneBranch(Hashtable pathsolutions){
+
+		Vector leaves =	Query.getLeaves();
+
+		int numberOfleaves = leaves.size();
+		Vector [] data = new Vector [numberOfleaves];
+		for(int i=0;i<numberOfleaves;i++)
+		{ 	String s = (String)leaves.elementAt(i);
+			Vector v =(Vector)pathsolutions.get(s);
+			data[i] = v;
+		}//end for
+
+		int [] pointer = new int [numberOfleaves];
+		merge (data,pointer,0);
+		return solutionCount;
+	}//end mergeOneBranch
+
+
+
+
+	static void mergeTwoBranchs(Hashtable pathsolutions){
+
+
+		String [] branches = Query.getBranchNode();//branches[0] is ganranteed to be an ancestor node
+
+		Vector branchleaves = Query.getBranchLeaves(branches[1]);
+
+		int numberOfleaves = branchleaves.size();
+
+		Vector [] data = new Vector [numberOfleaves];
+
+		for(int i=0;i<numberOfleaves;i++)
+		{ 	String s = (String)branchleaves.elementAt(i);
+			Vector v =(Vector)pathsolutions.get(s);
+			data[i] = v;
+		}//end for
+
+		int [] pointer = new int [numberOfleaves];
+		merge (data,pointer,1); //first merge nodes for the second branch node
+
+		mergeOneBranch(pathsolutions);
+
+
+	}//end mergeTwoBranch
 		
-	static void mergeOneBranch(Hashtable pathsolutions){
+	static List<List<String>> mergeOneBranch_naive(Hashtable pathsolutions){
 		
 		Vector leaves =	Query.getLeaves();
 			
@@ -39,14 +84,17 @@ public class mergeAllPathSolutions  {
 		}//end for
 		
 		int [] pointer = new int [numberOfleaves];
-		merge (data,pointer,0);
-		
-	}//end mergeOneBranch
-	
+		merge_naive (data,pointer,0);
 
-	
-	
-	static void mergeTwoBranchs(Hashtable pathsolutions){
+
+		//return id pair list
+		return solutionPairIDList;
+
+	}//end mergeOneBranch
+
+
+
+	static List<List<String>> mergeTwoBranchs_naive(Hashtable pathsolutions){
 			
 			
 		String [] branches = Query.getBranchNode();//branches[0] is ganranteed to be an ancestor node
@@ -66,73 +114,145 @@ public class mergeAllPathSolutions  {
 		int [] pointer = new int [numberOfleaves];
 		merge (data,pointer,1); //first merge nodes for the second branch node
 		
-		mergeOneBranch(pathsolutions);
-		
-		
+		mergeOneBranch_naive(pathsolutions);
+
+		//return id pair list
+		return solutionPairIDList;
+
 	}//end mergeTwoBranch
-	
+
 	static void merge( Vector [] data, int [] pointer, int branchref){ //since we have at most two branch nodes, branch ref is either 0 or 1
-		
+
 		int [] lastSameValue = new int [1];
-		
+
 		while (!endAll(data,pointer)){
-		
-		if (!equals(data,pointer,branchref)){
-			int min = mindata (data,pointer,branchref);
-			if ( !isCommonOne(data[min],pointer[min],lastSameValue, branchref))
-				 data[min].removeElementAt(pointer[min]); 
-			else
-				pointer[min]++;
-			
-		}//end if
-		else{	Vector v = ((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
-			lastSameValue = (int [])v.elementAt(branchref);
-			for(int i=0;i<pointer.length;i++)
-				pointer[i]++;
-		}//end else
-	
+
+			if (!equals(data,pointer,branchref)){
+				int min = mindata (data,pointer,branchref);
+				if ( !isCommonOne(data[min],pointer[min],lastSameValue, branchref))
+					data[min].removeElementAt(pointer[min]);
+				else
+					pointer[min]++;
+
+			}//end if
+			else{	Vector v = ((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
+				lastSameValue = (int [])v.elementAt(branchref);
+				for(int i=0;i<pointer.length;i++)
+					pointer[i]++;
+			}//end else
+
 		}//end while
-		
-		
+
+
 	}//end merge
-	
+
+
+
+	static void merge_naive( Vector [] data, int [] pointer, int branchref){ //since we have at most two branch nodes, branch ref is either 0 or 1
+
+		int [] lastSameValue = new int [1];
+
+		while (!endAll(data,pointer)){
+
+			if (!equals_naive(data,pointer,branchref)){
+				int min = mindata (data,pointer,branchref);
+				if ( !isCommonOne(data[min],pointer[min],lastSameValue, branchref))
+					data[min].removeElementAt(pointer[min]);
+				else
+					pointer[min]++;
+
+			}//end if
+			else{	Vector v = ((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
+				lastSameValue = (int [])v.elementAt(branchref);
+				for(int i=0;i<pointer.length;i++)
+					pointer[i]++;
+			}//end else
+
+		}//end while
+
+
+	}//end merge
+
 	static boolean equals(Vector [] data,int [] pointer, int branchref){
-		
+
 		for(int i=0;i<data.length;i++)
 			if (data[i].size() == pointer[i])
 				return  false;
-		
+
 		Vector v0 =((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
-		
+
 		int [] common = (int [])v0.elementAt(branchref);
-		
+
+		List<int []> currentNodeIDList = ((solutionKey)data[0].elementAt(pointer[0])).currentNode;
+		for(int i=1;i<data.length;i++)
+		{
+			Vector v =((solutionKey)data[i].elementAt(pointer[i])).branchnodes;
+
+			int [] datakey = (int [])v.elementAt(branchref);
+
+			if (utilities.isEqual (datakey, common)){
+				List<int []> pairNodeIdList = ((solutionKey)data[i].elementAt(pointer[i])).currentNode;
+				for(int[] c:currentNodeIDList){
+					for(int[] p:pairNodeIdList){
+						solutionCount++;
+					}
+				}
+			}
+			else return false;
+
+		}//end for
+
+		return true;
+
+
+
+	}//end equals
+
+	static boolean equals_naive(Vector [] data,int [] pointer, int branchref){
+
+		for(int i=0;i<data.length;i++)
+			if (data[i].size() == pointer[i])
+				return  false;
+
+		Vector v0 =((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
+
+		int [] common = (int [])v0.elementAt(branchref);
+
 		List<int []> currentNodeIDList = ((solutionKey)data[0].elementAt(pointer[0])).currentNode;
 		String currentNode = ((solutionKey)data[0].elementAt(pointer[0])).leaf;
 		for(int i=1;i<data.length;i++)
-			{
+		{
 			Vector v =((solutionKey)data[i].elementAt(pointer[i])).branchnodes;
-		
+
 			int [] datakey = (int [])v.elementAt(branchref);
-			
+
 			if (utilities.isEqual (datakey, common)) {
-				System.out.println("pair:");
-				String pairNode = ((solutionKey)data[i].elementAt(pointer[i])).leaf;
+				//System.out.println("pair:");
+				//String pairNode = ((solutionKey)data[i].elementAt(pointer[i])).leaf;
 				List<int []> pairNodeIdList = ((solutionKey)data[i].elementAt(pointer[i])).currentNode;
-				utilities.PrintPair(currentNodeIDList, currentNode,pairNodeIdList,pairNode);
+				//utilities.PrintPair(currentNodeIDList, currentNode,pairNodeIdList,pairNode);
 
 
+				for(int[] c:currentNodeIDList){
+					for(int[] p:pairNodeIdList){
+						List<String> pairIDList = new ArrayList<>();
+						pairIDList.add(utilities.ArrayToString(c));
+						pairIDList.add(utilities.ArrayToString(p));
+						solutionPairIDList.add(pairIDList);
+					}
+				}
 			}
 			else
 				return false;
-		
+
 		}//end for
-	
+
 		return true;
-	
-		
-		
-		}//end equals
-		
+
+
+
+	}//end equals
+
 	static boolean  endAll(Vector [] data, int [] pointer){
 		
 		for(int i=0;i<data.length;i++)

@@ -10,7 +10,7 @@ import java.io.*;
 /**
  * Created by zzzhou on 2017-07-18.
  */
-public class naiveSolution extends DefaultHandler {
+public class queryAnalysis_naive extends DefaultHandler {
     Hashtable twigTagNames;
 
     static String filename;
@@ -99,6 +99,8 @@ public class naiveSolution extends DefaultHandler {
 
         Query.setRoot(ROOT);
 
+        Query.getQueryNodes();
+
         utilities.DebugPrintln("Query root is " + Query.getRoot());
 
 
@@ -133,22 +135,22 @@ public class naiveSolution extends DefaultHandler {
             Hashtable [] alldata = d.loadAllLeafData_naive (Query.getLeaves(),DTDInfor);
 
             long loadendTime = System.currentTimeMillis();
+            System.out.println("load tjFast input data time is "+(loadendTime-loadbeginTime));
 
-            //��������join�Ĺ���
-            System.out.println( "begin join !");
+            //begin join
+            //System.out.println( "begin join !");
 
             long joinbeginTime = System.currentTimeMillis();
 
             TwigSet join = new TwigSet(DTDInfor,alldata[1],alldata[0] );
 
-            join.beginJoin();
+            join.beginJoin_naive();
 
             long joinendTime = System.currentTimeMillis();
 
             long totalendTime = System.currentTimeMillis();
-            System.out.println("load data time is "+(loadendTime-loadbeginTime));
 
-            System.out.println("join data time is "+(joinendTime-joinbeginTime));
+            System.out.println("naive method running time is "+(joinendTime-joinbeginTime));
 
             System.out.println("Total running time is "+(totalendTime-totalbeginTime));
 
@@ -216,7 +218,7 @@ public class naiveSolution extends DefaultHandler {
         XMLReader xmlReader = saxParser.getXMLReader();
 
         // Set the ContentHandler of the XMLReader
-        xmlReader.setContentHandler(new naiveSolution());
+        xmlReader.setContentHandler(new queryAnalysis_naive());
 
         // Set an ErrorHandler before parsing
         xmlReader.setErrorHandler(new MyErrorHandler(System.err));

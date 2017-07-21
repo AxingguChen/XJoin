@@ -141,9 +141,9 @@ public class loadDataSet {
             //System.out.println("now load data:" + tag);
             for(int i=0;i< idList.size();i++) {
 
-                int[] data = convertStrToInt(idList.get(i).toString());
+                int[] result = convertStrToInt(idList.get(i).toString());
 
-                int[] result = convertToIntegers(data); // result--tag ID
+                //int[] result = convertToIntegers(data); // result--tag ID
 
                 int[] tagInt = DTDInfor.getAllTags(result, DTDInfor.root); // tag
                 /**

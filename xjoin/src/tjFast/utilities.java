@@ -108,6 +108,14 @@ public class utilities {
 		System.out.println("["+pairCount+" pair]. ");
 	}
 
+	public static String ArrayToString(int[] array){
+		String str = "";
+		for(int i=0;i<array.length;i++){
+			str = str+"/"+array[i];
+		}
+		return str;
+	}
+
 	static void DebugPrint (String s){
 		
 		if (Debug)
