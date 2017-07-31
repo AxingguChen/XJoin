@@ -218,7 +218,8 @@ public class documentAnalysis extends DefaultHandler {
 
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
-        //tagList.addAll(Arrays.asList("a","b","c","d","e"));
+
+        //tagList.addAll(Arrays.asList("a","b","c","d"));
         tagList.addAll(Arrays.asList("Invoices","Invoice","asin","price","Orderline"));
         //delete previous files
         File directory = new File("xjoin/src/produce/outputData");

@@ -14,6 +14,10 @@ public class loadDataSet {
     int totalElement = 0;
     labelMatching lm = new labelMatching();
 
+    List<HashMap<String, String>> allTagIDValue = new ArrayList<>();
+    public List<HashMap<String, String>> getAllTagIDValue() {
+        return allTagIDValue;
+    }
     Hashtable[] loadAllLeafData_naive(Vector leaves,DTDTable DTDInfor) throws Exception{
 
 
@@ -41,17 +45,19 @@ public class loadDataSet {
 
     Vector []  loadData_naive (String tag,DTDTable DTDInfor ){	//???loaddata[0] ????????,??	loaddata[1]??tag?
 
-
+        HashMap<String, String> tagMap = new HashMap();
         Vector [] loadedData = new Vector [2];
         loadedData[0] = new Vector();
         loadedData[1] = new Vector();
 
         RandomAccessFile r = null;
-
+        RandomAccessFile r_v = null;
         try{
             r = new   RandomAccessFile("xjoin/src/produce/outputData\\"+tag,"rw");
-
-            while (true)
+            r_v = new RandomAccessFile("xjoin/src/produce/outputData/" + tag + "_v", "rw");//read value file
+            r_v.seek(0);
+            String value = null;
+            while ((value = r_v.readUTF()) != null)
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);
                 int [] data = new int [len];
@@ -62,6 +68,8 @@ public class loadDataSet {
 
                 int [] tagInt = DTDInfor.getAllTags(result, DTDInfor.root);
 
+                String id =  utilities.ArrayToString(result);
+                tagMap.put(id, value);
 			/*for(int i=0;i<tagInt.length;i++)
 				System.out.print(" "+tagInt[i]);
 			System.out.println();*/
@@ -84,6 +92,7 @@ public class loadDataSet {
         loadedData[0].addElement(terminal);
         loadedData[1].addElement(terminal);
 
+        allTagIDValue.add(tagMap);
         return loadedData ;
 
     }

@@ -201,7 +201,7 @@ public class TwigSet {
 
 
 
-    void beginJoin_naive() throws Exception{
+    void beginJoin_naive(List<HashMap<String, String>> allTagIDValue) throws Exception{
         System.out.println("begin join");
         List<List<String>> idList_all = new ArrayList<>();
         //�������ڲ���
@@ -259,7 +259,7 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod naive = new naiveMethod();
-                    List<List<String>> result = naive.getResult(solutionPairIDList);
+                    List<List<String>> result = naive.getResult(solutionPairIDList,allTagIDValue);
                     System.out.println("Final solution number is:"+result.size());
                 }
                 else

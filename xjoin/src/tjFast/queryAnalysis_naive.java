@@ -135,7 +135,7 @@ public class queryAnalysis_naive extends DefaultHandler {
             Hashtable [] alldata = d.loadAllLeafData_naive (Query.getLeaves(),DTDInfor);
 
             long loadendTime = System.currentTimeMillis();
-            System.out.println("load tjFast input data time is "+(loadendTime-loadbeginTime));
+            System.out.println("load tjFast input data(include all tag id value) time is "+(loadendTime-loadbeginTime));
 
             //begin join
             //System.out.println( "begin join !");
@@ -144,7 +144,9 @@ public class queryAnalysis_naive extends DefaultHandler {
 
             TwigSet join = new TwigSet(DTDInfor,alldata[1],alldata[0] );
 
-            join.beginJoin_naive();
+            List<HashMap<String, String>> allTagIDValue = d.getAllTagIDValue();
+
+            join.beginJoin_naive(allTagIDValue);
 
             long joinendTime = System.currentTimeMillis();
 

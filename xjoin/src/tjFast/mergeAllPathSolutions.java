@@ -27,7 +27,7 @@ public class mergeAllPathSolutions  {
 	}//end mergeOneBranch
 	static int solutionCount=0;
 	static int mergeOneBranch(Hashtable pathsolutions){
-
+		//solutionCount = 0;
 		Vector leaves =	Query.getLeaves();
 
 		int numberOfleaves = leaves.size();
@@ -194,7 +194,20 @@ public class mergeAllPathSolutions  {
 				List<int []> pairNodeIdList = ((solutionKey)data[i].elementAt(pointer[i])).currentNode;
 				for(int[] c:currentNodeIDList){
 					for(int[] p:pairNodeIdList){
+//						utilities.PrintIntArray(c,"current node");
+//						utilities.PrintIntArray(p,"pair node");
 						solutionCount++;
+//						try{
+//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinResult.txt",true));
+//						out.write(utilities.ArrayToString(c)+" "+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
+//						//you are trying to write
+//						out.close();
+//						}
+//            			catch (IOException e)
+//						{
+//							System.out.println("Exception ");
+//
+//						}
 					}
 				}
 			}

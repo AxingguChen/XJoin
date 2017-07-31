@@ -12,16 +12,8 @@ import java.util.*;
 public class naiveMethod {
     static int readRDBcount = 0;
     //get xml value,id pair list
-    public List<List<String>> getValuePair(List<List<String>> pairIDList) throws Exception {
-        String[] queryNode = Query.getQueryNodes();
+    public List<List<String>> getValuePair(List<List<String>> pairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception {
         List<List<String>> resultList = new ArrayList<>();
-        List<HashMap<String, String>> allTagIDValue = new ArrayList<>();
-        //load all related tag's value and id
-        for (int i = 1; i < queryNode.length; i++) {
-            String tagName = queryNode[i];
-            HashMap<String, String> tagMap = getTagMap(tagName);
-            allTagIDValue.add(tagMap);
-        }
         //loop each pair of result ID and find its value
         for (List<String> p : pairIDList) {
             List<String> valueIDList = new ArrayList<>();
@@ -126,6 +118,43 @@ public class naiveMethod {
         return rdbValue;
     }
 
+    public List<List<String>> buildRDBValue(List<String> tagList) throws  Exception{
+        List<List<String>> result = new ArrayList<>();
+        String twigL = "asin";
+        String twigR = "price";
+        int count = 0;
+        try{
+            RandomAccessFile r_vl = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigL+"_v","rw");//read value file
+            RandomAccessFile r_vr = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigR+"_v","rw");//read value file
+            r_vl.seek(0);
+            r_vr.seek(0);
+            String valuel = null;
+            String valuer = null;
+
+            while ( (valuel=r_vl.readUTF()) != null && (valuer=r_vr.readUTF()) != null )
+            {
+                List<String> valueList = new ArrayList<>();
+//                valuel = valuel+"_"+count;
+//                valuer = valuer+"_"+count;
+                valueList.addAll(Arrays.asList(valuel,valuer));
+                result.add(valueList);
+                count++;
+                //System.out.println("build value:"+valuel + " "+valuer);
+            }
+
+        }
+        catch (EOFException eofex) {
+            //do nothing
+        }
+        catch(Exception e){
+            System.out.println("e is:"+e);
+        }
+        ////System.out.println("original build RDB value count:"+count);
+        return result;
+    }
+
+
+
     public List<List<String>> joinValue(List<List<String>> xmlList, List<List<String>> rdbValue){
         int i=0; int j = 0;
         //i -> row number of rdb table, j-> row number of xmlList
@@ -161,13 +190,33 @@ public class naiveMethod {
         return xmlList;
     }
 
-    public List<List<String>> getResult(List<List<String>> solutionPairIDList) throws Exception{
+    public List<List<String>> getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
+        //rdb table
+        //load
+        List<String> leaves = Query.getLeaves();
+        //List<String> leaves = A
+        long loadRDBbeginTime = System.currentTimeMillis();
+        List<List<String>> rdbValue = loadRDBValue(leaves);
+        //List<List<String>> rdbValue = buildRDBValue(leaves);
+        long loadRDBendTime = System.currentTimeMillis();
+        System.out.println("load rdb table data time is " + (loadRDBendTime - loadRDBbeginTime));
+        //sort
+        long sortRDBbeginTime = System.currentTimeMillis();
+        Collections.sort(rdbValue,new Comparator<List<String>>(){
+            public int compare(List<String> l1, List<String> l2){
+                return l1.get(0).compareTo(l2.get(0));
+            }}
+        );
+        long sortRDBendTime = System.currentTimeMillis();
+        System.out.println("sort rdb data time is " + (sortRDBendTime - sortRDBbeginTime));
+        System.out.println("rdbValue:"+rdbValue.size());
+
         //XML
         //load
         long loadbeginTime = System.currentTimeMillis();
-        List<List<String>> xmlList = getValuePair(solutionPairIDList);
+        List<List<String>> xmlList = getValuePair(solutionPairIDList,allTagIDValue);
         long loadendTime = System.currentTimeMillis();
-        System.out.println("load xml data time is " + (loadendTime - loadbeginTime));
+        System.out.println("Find xml value by id time is " + (loadendTime - loadbeginTime));
 
         //sort value pair list according to the first value of each pair
         long sortbeginTime = System.currentTimeMillis();
@@ -180,23 +229,7 @@ public class naiveMethod {
         System.out.println("sort xml data time is " + (sortendTime - sortbeginTime));
         System.out.println("xmlList:"+xmlList.size());
 
-        //rdb table
-        //load
-        List<String> leaves = Query.getLeaves();
-        loadbeginTime = System.currentTimeMillis();
-        List<List<String>> rdbValue = loadRDBValue(leaves);
-        loadendTime = System.currentTimeMillis();
-        System.out.println("load rdb table data time is " + (loadendTime - loadbeginTime));
-        //sort
-        sortbeginTime = System.currentTimeMillis();
-        Collections.sort(rdbValue,new Comparator<List<String>>(){
-            public int compare(List<String> l1, List<String> l2){
-                return l1.get(0).compareTo(l2.get(0));
-            }}
-        );
-        sortendTime = System.currentTimeMillis();
-        System.out.println("sort rdb data time is " + (sortendTime - sortbeginTime));
-        System.out.println("rdbValue:"+rdbValue.size());
+
 
         long joinbegintime = System.currentTimeMillis();
         List<List<String>> resultList = joinValue(xmlList,rdbValue);
@@ -219,6 +252,20 @@ public class naiveMethod {
 //            res = (res && exsit);
 //        }
 //        System.out.println("correct or not?"+res);
+//        try {
+//            for(List<String> l:resultList){
+//
+//                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/naiveResult.txt",true));
+//                out.write(l.get(0)+" "+l.get(1)+" "+l.get(2)+" "+l.get(3)+"\r\n");  //Replace with the string
+//                //you are trying to write
+//                out.close();
+//            }}
+//            catch (IOException e)
+//            {
+//                System.out.println("Exception ");
+//
+//            }
+
         return resultList;
     }
 

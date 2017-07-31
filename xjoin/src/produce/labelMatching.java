@@ -33,31 +33,82 @@ public class labelMatching {
         public String toString() {
             return String.format("{%s , %s , %s , %s}", leftTagValue, rightTagValue, leftTagID,rightTagID);
         }
-        String getL_v() { return leftTagValue; }
-        String getR_v() { return rightTagValue; }
+        public String getL_v() { return leftTagValue; }
+        public String getR_v() { return rightTagValue; }
         public List getL_ID(){ return leftTagID;}
         public List getR_ID(){ return rightTagID;}
     }
 
+    public static class joinMatch {
+        private String tagValue;
+        private String rightTagValue;
+
+    }
+
+    public static class tagMap {
+        private String value;
+        private int[] id;
+
+        public tagMap(String value, int[] id) {
+            this.value = value;
+            this.id = id;
+        }
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public int[] getId() {
+            return id;
+        }
+
+        public void setId(int[] id) {
+            this.id = id;
+        }
+
+
+    }
+
     // this function still need modification to meet analysis the tag name automatically
-    public List<Match> readRDBValue_line(String twigL, String twigR) throws Exception{
+    public List<Match> readRDBValue_line(List<String> tagList) throws Exception{
         List<Match> result = new ArrayList<>();
         String csvFile = "xjoin/src/table.csv";
         String line = "";
-        String cvsSplitBy = ",";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-
+            //read first line to locate the tags
+            line = br.readLine();
+            //split first line by "|"
+            List<String> list = Arrays.asList(line.split("\\|"));
+            //List<String> list = Arrays.asList(line.split(","));
+            //initialize new list to store the column location of tags in tables
+            List<Integer> tagLocation = new ArrayList<>();
+            //@@here has a nested loop, cuz we need to read the table according to the query leaves order
+            for (int i = 0; i < tagList.size(); i++) {
+                for (int j = 0; j < list.size(); j++) {
+                    if (tagList.get(i).equals(list.get(j))){
+                        tagLocation.add(j);
+                        break;
+                    }
+                }
+            }
             while ((line = br.readLine()) != null) {
 
                 // use comma as separator
                 //String[] str = line.split(cvsSplitBy);
-
-                List<String> list = Arrays.asList(line.split("\\|"));
-                if(list.size() > 2){
+                list = Arrays.asList(line.split("\\|"));
+                if(list.size() > tagLocation.get(tagLocation.size() - 1)){
                     //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
+                    List<String> valueList = new ArrayList<>();
+                    //if(list.size() < 2) System.out.println("less than 2");
+                    for (int i : tagLocation) {
+                        valueList.add(list.get(i));
+                    }
                     readRDBcount++;
-                    result.add(new Match(list.get(0),list.get(2),null,null));
+                    result.add(new Match(valueList.get(0),valueList.get(1),null,null));
                 }
             }
 
@@ -185,6 +236,44 @@ public class labelMatching {
         return result;
     }
 
+    public List<tagMap> getTagMap_map(String tag)  throws Exception{
+        List<tagMap> tagList = new ArrayList<>();
+        int m=0;
+        try{
+            //outputLabel.readUTF8_v(tag);
+            RandomAccessFile r = null;
+            RandomAccessFile r_v = null;
+            r = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag,"rw");//read id file
+            r_v = new  RandomAccessFile("xjoin/src/produce/outputData/"+tag+"_v","rw");//read value file
+            r_v.seek(0);
+            String value = null;
+            loadDataSet lds = new loadDataSet();
+            while ((value = r_v.readUTF()) != null) {
+                byte len = r.readByte();
+                int[] data = new int[len];
+                for (int i = 0; i < len; i++) {
+                    data[i] = r.readUnsignedByte();
+                }
+                int [] id = convertToIntegers(data);
+                tagList.add(new tagMap(value,id));//value, id
+
+            }}
+        catch (EOFException eofex) {
+            //do nothing
+        }
+        catch(Exception e){
+            System.out.println("e is "+e);
+        }
+        long sortTagBeginTime = System.currentTimeMillis();
+        Comparator<tagMap> comparator = Comparator.comparing(tagMap::getValue);
+        tagList.sort(comparator);
+        long sortTagEndTime = System.currentTimeMillis();
+        ////System.out.println("sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime));
+        ////System.out.println("tag row:"+m);
+        runningResult = runningResult +"\r\n"+"sort tag "+tag+", time:"+(sortTagEndTime-sortTagBeginTime);
+        return tagList;
+    }
+
 
     public List<List<String>> getTagMap(String tag)  throws Exception{
         List<List<String>> tagList = new ArrayList<>();
@@ -204,11 +293,12 @@ public class labelMatching {
                 String id = "";
                 for (int i = 0; i < len; i++) {
                     data[i] = r.readUnsignedByte();
-                    id = id + "/" + data[i];
                 }
                 int [] result = convertToIntegers(data);
                 id = utilities.ArrayToString(result);
-                List<String> l = new ArrayList<>();//every row [value, id]
+                //every row [value, id]
+                List<String> l = new ArrayList<>();
+                //next line is only for build rdb value
                 //value = value + "_"+m;
                 m++;
                 l.add(value);l.add(id);
@@ -357,21 +447,51 @@ public class labelMatching {
         return 0;
     }//end convertToUTF8
 
-    // tFlag{left,right} -> left column value or right column value of table
-    public void matchValue(List<Match> result, List<List<String>> tagList, String tFlag){
-        if(tFlag.equals("left")) {
-            int i=0; int j = 0;
-            while(i != result.size() && j != tagList.size()){
+    //compare int array
+    //if array1 > array2, return true
+    public Boolean compareIntArray(int[] array1, int[] array2){
+        Boolean flag = false;
+        for(int i = 0;i<array2.length;){
+            if(i<array1.length){
+                if(array1[i] == array2[i]) i++;
+                else if(array1[i] > array2[i]) {flag=true; break;}
+                else {flag=false;break;}
+            }
+            else {flag=false;break;}
+        }
+        return flag;
+    }
+
+    //insertion sort
+    public List<int[]> insert(int[] x, List<int[]> l){
+        // loop through all elements
+        for (int i = 0; i < l.size(); i++) {
+            // if the element you are looking at is smaller than x,
+            // go to the next element
+            if ( compareIntArray(x,l.get(i))) continue;
+            // otherwise, we have found the location to add x
+            l.add(i, x);
+            return l;
+        }
+        // we looked through all of the elements, and they were all
+        // smaller than x, so we add ax to the end of the list
+        l.add(x);
+        return l;
+    }
+
+    public void matchValue_new(List<Match> result, List<List<String>> tagList){
+        int i=0; int j = 0;
+        while(i != result.size() && j != tagList.size()){
                 String table_value = result.get(i).getL_v();
+
                 //String rightValue = result.get(i).getR_v();
-                List id_list = new ArrayList<>();//To store id list for every row
+                List<String> id_list = new ArrayList<>();//To store id list for every row
                 String tag_value = tagList.get(j).get(0); // 0-value, 1-id
                 int compare_result = table_value.compareTo(tag_value);
                 if (compare_result == 0) { //equals
                     if(result.get(i).getL_ID() != null)
                         id_list = result.get(i).getL_ID();
                     id_list.add(tagList.get(j).get(1));// add corresponding tag id
-                    //Collections.sort(id_list);
                     result.get(i).set_LID(id_list);
                     if(j+1 != tagList.size())
                         j++;
@@ -387,15 +507,71 @@ public class labelMatching {
                 else if (compare_result < 0){ // table_value < tag_value
                     ///**
                     id_list=result.get(i).getL_ID();
-                    if(id_list != null){
-                        Collections.sort(id_list);
-                        result.get(i).set_LID(id_list);
-                    }//*/
-                    i++;
+
                     //previous table value equals current table value
-                    if(i!= result.size() && table_value.equals(result.get(i).getL_v())){
+                    if(i!= result.size() && i>0 && table_value.equals(result.get(i-1).getL_v())){
                         id_list = result.get(i-1).getL_ID();
                         result.get(i).set_LID(id_list);
+                        i++;
+                    }
+                    else{
+                        if(id_list != null){
+                            List<String> org_list = id_list;
+                            Collections.sort(id_list);
+                            result.get(i).set_LID(id_list);
+                        }//*/
+                        i++;
+                    }
+                }
+                else if(compare_result > 0){ // table_value > tag_value
+                    j++;
+                }
+            }
+        }
+
+    // tFlag{left,right} -> left column value or right column value of table
+    public void matchValue(List<Match> result, List<List<String>> tagList, String tFlag){
+        if(tFlag.equals("left")) {
+            int i=0; int j = 0;
+            while(i != result.size() && j != tagList.size()){
+                String table_value = result.get(i).getL_v();
+
+                //String rightValue = result.get(i).getR_v();
+                List<String> id_list = new ArrayList<>();//To store id list for every row
+                String tag_value = tagList.get(j).get(0); // 0-value, 1-id
+                int compare_result = table_value.compareTo(tag_value);
+                if (compare_result == 0) { //equals
+                    if(result.get(i).getL_ID() != null)
+                        id_list = result.get(i).getL_ID();
+                    id_list.add(tagList.get(j).get(1));// add corresponding tag id
+                    result.get(i).set_LID(id_list);
+                    if(j+1 != tagList.size())
+                        j++;
+                    else {///**
+                        id_list=result.get(i).getL_ID();
+                        if(id_list != null){
+                            //Collections.sort(id_list);
+                            result.get(i).set_LID(id_list);
+                        }//*/
+                        i++;
+                    }
+                }
+                else if (compare_result < 0){ // table_value < tag_value
+                    ///**
+                    id_list=result.get(i).getL_ID();
+
+                    //previous table value equals current table value
+                    if(i!= result.size() && i>0 && table_value.equals(result.get(i-1).getL_v())){
+                        id_list = result.get(i-1).getL_ID();
+                        result.get(i).set_LID(id_list);
+                        i++;
+                    }
+                    else{
+                        if(id_list != null){
+                            List<String> org_list = id_list;
+                            //Collections.sort(id_list);
+                            result.get(i).set_LID(id_list);
+                        }//*/
                         i++;
                     }
                 }
@@ -409,6 +585,12 @@ public class labelMatching {
             int i=0; int j = 0;
             while(i != result.size() && j != tagList.size()){
                 String table_value = result.get(i).getR_v();
+//                if(table_value.equals("16.99")&&i==2357){
+//                    System.out.println();
+//                    System.out.println("j");
+//
+//                }
+
                 List<String> id_list = new ArrayList<>();//To store id list for every row
                 String tag_value = tagList.get(j).get(0); // 0-value, 1-id
                 int compare_result = table_value.compareTo(tag_value);
@@ -423,7 +605,7 @@ public class labelMatching {
                     else{///**
                         id_list=result.get(i).getR_ID();
                         if(id_list != null){
-                            Collections.sort(id_list);
+                            //Collections.sort(id_list);
                             result.get(i).set_RID(id_list);
                         }//*/
                         i++;
@@ -432,17 +614,19 @@ public class labelMatching {
                 else if (compare_result < 0){ // table_value < tag_value
                     ///**
                     id_list=result.get(i).getR_ID();
-                    if(id_list != null){
-                        Collections.sort(id_list);
-                        result.get(i).set_RID(id_list);
-                    }//*/
-                    i++;
+
                     //previous table value equals current table value
-                    if(i!= result.size() && table_value.equals(result.get(i).getR_v())){
+                    if(i!= result.size() && i>0 && table_value.equals(result.get(i-1).getR_v())){
                         id_list = result.get(i-1).getR_ID();
                         result.get(i).set_RID(id_list);
                         i++;
                     }
+                    else{
+                    if(id_list != null){
+                        //Collections.sort(id_list);
+                        result.get(i).set_RID(id_list);
+                    }//*/
+                    i++;}
                 }
                 else if(compare_result > 0){ // table_value > tag_value
                     j++;
@@ -482,7 +666,10 @@ public class labelMatching {
         //Load RDB value
         //System.out.println("load RDB value");
         loadRDBbeginTime = System.currentTimeMillis();
-        List<Match> result =m.readRDBValue_line(leftTag,rightTag);
+        List<String> tagList = new ArrayList<>();
+        tagList.add(leftTag);
+        tagList.add(rightTag);
+        List<Match> result =m.readRDBValue_line(tagList);
         //List<Match> result =m.buildRDBValue(leftTag,rightTag);
         //List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
@@ -505,6 +692,22 @@ public class labelMatching {
         m.matchValue(result,left_tag,"left");
         matchendTime = System.currentTimeMillis();
         totalMatchTime = matchendTime - matchbeginTime;
+
+        //after match left
+//        for(Match l:result){
+//        try {
+//            BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinMatchLeftResult.txt",true));
+//            out.write(l.getL_v()+" "+l.getL_ID()+" "+l.getR_v()+" "+l.getR_ID()+"\r\n");  //Replace with the string
+//            //you are trying to write
+//            out.close();
+//        }
+//        catch (IOException e)
+//        {
+//            System.out.println("Exception ");
+//
+//        }}
+
+
         //System.out.println("Start sort right");
         sortbeginTime = System.currentTimeMillis();
         comparator = Comparator.comparing(Match::getR_v);
@@ -517,6 +720,20 @@ public class labelMatching {
         matchendTime = System.currentTimeMillis();
         totalMatchTime = totalMatchTime + matchendTime - matchbeginTime;
 
+
+        //after match right
+//        for(Match l:result){
+//            try {
+//                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinMatchRightResult.txt",true));
+//                out.write(l.getL_v()+" "+l.getL_ID()+" "+l.getR_v()+" "+l.getR_ID()+"\r\n");  //Replace with the string
+//                //you are trying to write
+//                out.close();
+//            }
+//            catch (IOException e)
+//            {
+//                System.out.println("Exception ");
+//
+//            }}
         //System.out.println(result);
 
         ////System.out.println("total sort table value time: " + totalSortTime);
@@ -527,12 +744,23 @@ public class labelMatching {
         //System.out.println(result + " size:"+result.size());
         int i = 0;
         int remove_count=0;
-        //System.out.println("start remove candidates");
+        System.out.println("before remove candidates size:"+result.size());
         Long removeStartTime = System.currentTimeMillis();
         while(i != result.size()){
             //System.out.println("i:"+i+" l:" + result.get(i).getL_ID() + " r:"+result.get(i).getR_ID());
             if(result.get(i).getL_ID() == null || result.get(i).getR_ID() == null)
             {
+//                try {
+//                    BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinRemoveResult.txt",true));
+//                    out.write(result.get(i).getL_v()+" "+result.get(i).getR_v()+"\r\n");  //Replace with the string
+//                    //you are trying to write
+//                    out.close();
+//                }
+//                catch (IOException e)
+//                {
+//                    System.out.println("Exception ");
+//
+//                }
                 //System.out.println("remove result:"+result.get(i).getL_v()+" "+result.get(i).getR_v());
                 //System.out.println("ID list:"+result.get(i).getL_ID()+" "+result.get(i).getR_ID());
                 result.remove(i);
@@ -567,9 +795,10 @@ public class labelMatching {
 
     public static void main(String[] args) throws Exception{
         labelMatching lm = new labelMatching();
-        List<Match> re = lm.getSolution("b","c");
-        //List<Match> re = lm.getSolution("asin","price");
+        //List<Match> re = lm.getSolution("b","c");
+        List<Match> re = lm.getSolution("asin","price");
         //System.out.println(re);
-        //lm.readRDBValue_line("asin","price");
+//        lm.readRDBValue_line("asin","price");
+//        lm.getTagMap("asin");
     }
 }
