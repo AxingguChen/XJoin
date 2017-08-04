@@ -57,7 +57,8 @@ public class loadDataSet {
             r_v = new RandomAccessFile("xjoin/src/produce/outputData/" + tag + "_v", "rw");//read value file
             r_v.seek(0);
             String value = null;
-            while ((value = r_v.readUTF()) != null)
+            //int count = 0;
+            while ((value = r_v.readUTF()) != null )//&& count< 3000 )
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);
                 int [] data = new int [len];
@@ -78,6 +79,7 @@ public class loadDataSet {
                 loadedData[1].addElement(tagInt);
 
                 totalElement++;
+                //count++;
 
             }//end while
 

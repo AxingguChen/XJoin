@@ -262,8 +262,11 @@ public class TwigSet {
                     List<List<String>> result = naive.getResult(solutionPairIDList,allTagIDValue);
                     System.out.println("Final solution number is:"+result.size());
                 }
-                else
-                    mergeAllPathSolutions.mergeTwoBranchs(finalResults);
+                else{
+                    //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
+                    List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeTwoBranchs_naiveDouble(finalResults);
+                    System.out.println("solution pair number is:"+solutionPairIDList.size());
+                }
                 //System.out.println("final result:"+finalResults.get("b"));
                 //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));
 
@@ -513,17 +516,17 @@ public class TwigSet {
 
             //for double layer query
 
-            //String branches [] =Query.getBranchNodes(qleaf);
+            String branches [] =Query.getBranchNodes(qleaf);
 
             //only for path query
 
-            String branches[] = new String[1];
-
-            branches[0] = Query.getRoot();
+//            String branches[] = new String[1];
+//
+//            branches[0] = Query.getRoot();
 
             boolean isSolution = true;
             for (int j = 0; j < branches.length; j++)
-                if (!setContainsSolution(branches[j], qleaf, text, solution)) //��仰�����Ƿ�set�а�����һ��solution
+                if (!setContainsSolution(branches[j], qleaf, text, solution)) //
                 {
                     isSolution = false;
                     break;

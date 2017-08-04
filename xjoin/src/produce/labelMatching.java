@@ -71,7 +71,7 @@ public class labelMatching {
 
 
     }
-
+    long totalT = 0;
     // this function still need modification to meet analysis the tag name automatically
     public List<Match> readRDBValue_line(List<String> tagList) throws Exception{
         List<Match> result = new ArrayList<>();
@@ -99,7 +99,11 @@ public class labelMatching {
 
                 // use comma as separator
                 //String[] str = line.split(cvsSplitBy);
+                long T = System.currentTimeMillis();
                 list = Arrays.asList(line.split("\\|"));
+                //list = Arrays.asList(line.split(","));
+                long T1 = System.currentTimeMillis();
+                totalT = totalT + (T1-T);
                 if(list.size() > tagLocation.get(tagLocation.size() - 1)){
                     //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
                     List<String> valueList = new ArrayList<>();
@@ -117,6 +121,7 @@ public class labelMatching {
         }
 
         ////System.out.println("valid read RDB row:"+readRDBcount);
+        System.out.println("T:"+totalT);
         return  result;
     }
 
@@ -287,7 +292,7 @@ public class labelMatching {
             r_v.seek(0);
             String value = null;
             loadDataSet lds = new loadDataSet();
-            while ((value = r_v.readUTF()) != null) {
+            while ((value = r_v.readUTF()) != null ) {
                 byte len = r.readByte();
                 int[] data = new int[len];
                 String id = "";

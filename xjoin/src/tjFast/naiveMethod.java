@@ -70,11 +70,12 @@ public class naiveMethod {
         }
         return tagMap;
     }
-
+    long totalT = 0;
     public List<List<String>> loadRDBValue(List<String> tagList) throws Exception {
         List<List<String>> rdbValue = new ArrayList<>();
         String csvFile = "xjoin/src/table.csv";
         String line = "";
+
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
             //read first line to locate the tags
             line = br.readLine();
@@ -84,6 +85,7 @@ public class naiveMethod {
             //initialize new list to store the column location of tags in tables
             List<Integer> tagLocation = new ArrayList<>();
             //@@here has a nested loop, cuz we need to read the table according to the query leaves order
+
             for (int i = 0; i < tagList.size(); i++) {
                 for (int j = 0; j < list.size(); j++) {
                     if (tagList.get(i).equals(list.get(j))){
@@ -92,27 +94,35 @@ public class naiveMethod {
                     }
                 }
             }
+
+
             while ((line = br.readLine()) != null) {
                 // use comma as separator
+//                long T = System.currentTimeMillis();
                 list = Arrays.asList(line.split("\\|"));
                 //list = Arrays.asList(line.split(","));
+                //long T1 = System.currentTimeMillis();
+//                totalT = totalT + (T1-T);
                 if (list.size() > tagLocation.get(tagLocation.size() - 1)) {
                     //System.out.println("asin: " + list.get(0) + " price:" + list.get(2) );
                     List<String> valueList = new ArrayList<>();
                     //if(list.size() < 2) System.out.println("less than 2");
+
                     for (int i : tagLocation) {
                         valueList.add(list.get(i));
                     }
+
                     rdbValue.add(valueList);
+
+
                     readRDBcount++;
                     //result.add(new Match());
                 }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        System.out.println("T:"+totalT);
         System.out.println("valid read RDB row:" + readRDBcount);
 
         return rdbValue;
@@ -157,13 +167,13 @@ public class naiveMethod {
 
     public List<List<String>> joinValue(List<List<String>> xmlList, List<List<String>> rdbValue){
         int i=0; int j = 0;
+        List<List<String>> joinList = new ArrayList<>();
         //i -> row number of rdb table, j-> row number of xmlList
         while(i != rdbValue.size() && j != xmlList.size()){
             //get the first column value of rdb table
             String table_value = rdbValue.get(i).get(0);
             // odd-value, even-id. 0 is value
             String xml_value = xmlList.get(j).get(0);
-
 
             int compare_result = table_value.compareTo(xml_value);
             if (compare_result == 0) { //equals
@@ -177,17 +187,19 @@ public class naiveMethod {
                     if(flag==false) break;
                 }
                 //if match successfully, move xml cursor to next row
-                if(flag==false) xmlList.remove(j);
-                else j++;
+                if(flag==true) joinList.add(xmlList.get(j));
+                j++;
+
             }
             else if (compare_result < 0){ // table_value < tag_value
                 i++;
             }
             else if(compare_result > 0){ // table_value > tag_value
-                xmlList.remove(j);
+                //xmlList.remove(j);
+                j++;
             }
         }
-        return xmlList;
+        return joinList;
     }
 
     public List<List<String>> getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
@@ -235,6 +247,9 @@ public class naiveMethod {
         List<List<String>> resultList = joinValue(xmlList,rdbValue);
         long joinendtime = System.currentTimeMillis();
         System.out.println("join xml&rdb data time is " + (joinendtime - joinbegintime));
+
+
+
         //System.out.println("final result:"+resultList);
         //following code is to test if all the result is exist in rdb table
 //        Boolean exsit = false;
@@ -292,7 +307,7 @@ public class naiveMethod {
 //
 //
 //        System.out.println("contains:"+allTagIDValue.get(1).containsKey("/128/5/2"));
-            nm.getTagMap("asin");
+            nm.loadRDBValue(Arrays.asList("asin","price"));
     }
 }
 
