@@ -8,6 +8,13 @@ public class mergeAllPathSolutions  {
 		
 	static List<List<String>> solutionPairIDList = new ArrayList<>();
 	static List<List<String>> solutionDoubleLayerIDList = new ArrayList<>();
+	//store the solution of b,c,[d,e]. branchPair[0] = solution of b. branchPair[1] = solution of c
+	static Vector [] branchPair = new Vector[2];
+	//tag d,e
+	static Vector buttonLeaves1 = new Vector();
+	static Vector buttonLeaves2 = new Vector();
+	//tag c
+	static Vector branchUnderRoot = new Vector();
 	static int solutionPairCount = 0;
 	static int getPathNumber(Hashtable finalResults,Vector leaves){
 		
@@ -48,11 +55,17 @@ public class mergeAllPathSolutions  {
 
 
 
-	static void mergeTwoBranchs(Hashtable pathsolutions){
+	static int mergeTwoBranchs(Hashtable pathsolutions){
 
 		String [] branches = Query.getBranchNode();//branches[0] is ganranteed to be an ancestor node
 
 		Vector branchleaves = Query.getBranchLeaves(branches[1]);
+
+		Vector allLeaves = Query.getLeaves();
+
+		//the tag name of single leave node of root
+		String singleLeave = Query.getRootSingleChild();
+
 
 		int numberOfleaves = branchleaves.size();
 
@@ -64,10 +77,23 @@ public class mergeAllPathSolutions  {
 			data[i] = v;
 		}//end for
 
-		int [] pointer = new int [numberOfleaves];
-		merge (data,pointer,1); //first merge nodes for the second branch node
+		// solutions of single leave:b
+		branchPair = new Vector[2];
+		buttonLeaves1.clear();
+		buttonLeaves2.clear();
+		buttonLeaves2.clear();
+		branchPair[0] = (Vector)pathsolutions.get(singleLeave);
 
-		mergeOneBranch(pathsolutions);
+		int [] pointer = new int [numberOfleaves];
+		merge_double (data,pointer,1); //first merge nodes for the second branch node
+		//branchPair[1] = branchUnderRoot;
+		branchPair[1] = buttonLeaves1;
+
+		//branchPair[3] = buttonLeaves2;
+//		mergeOneBranch_naiveDouble(pathsolutions);
+		merge_double (branchPair,new int [2],0);
+		//return id pair list
+		return solutionCount;
 
 
 	}//end mergeTwoBranch
@@ -93,34 +119,6 @@ public class mergeAllPathSolutions  {
 
 	}//end mergeOneBranch
 
-
-
-	static List<List<String>> mergeTwoBranchs_naive(Hashtable pathsolutions){
-			
-			
-		String [] branches = Query.getBranchNode();//branches[0] is ganranteed to be an ancestor node
-		
-		Vector branchleaves = Query.getBranchLeaves(branches[1]);
-		
-		int numberOfleaves = branchleaves.size();
-		
-		Vector [] data = new Vector [numberOfleaves];
-		
-		for(int i=0;i<numberOfleaves;i++)
-		{ 	String s = (String)branchleaves.elementAt(i);
-		 	Vector v =(Vector)pathsolutions.get(s);
-		 	data[i] = v;
-		}//end for
-		
-		int [] pointer = new int [numberOfleaves];
-		merge_naive (data,pointer,1); //first merge nodes for the second branch node
-		
-		mergeOneBranch_naive(pathsolutions);
-
-		//return id pair list
-		return solutionPairIDList;
-
-	}//end mergeTwoBranch
 
 
 	static void mergeOneBranch_naiveDouble(Hashtable pathsolutions){
@@ -149,6 +147,12 @@ public class mergeAllPathSolutions  {
 
 		Vector branchleaves = Query.getBranchLeaves(branches[1]);
 
+		Vector allLeaves = Query.getLeaves();
+
+		//the tag name of single leave node of root
+		String singleLeave = Query.getRootSingleChild();
+
+
 		int numberOfleaves = branchleaves.size();
 
 		Vector [] data = new Vector [numberOfleaves];
@@ -159,12 +163,18 @@ public class mergeAllPathSolutions  {
 			data[i] = v;
 		}//end for
 
+		// solutions of single leave:b
+		branchPair[0] = (Vector)pathsolutions.get(singleLeave);
+
 		int [] pointer = new int [numberOfleaves];
 		merge_naiveDouble (data,pointer,1); //first merge nodes for the second branch node
-		mergeOneBranch_naiveDouble(pathsolutions);
-
+		//branchPair[1] = branchUnderRoot;
+		branchPair[1] = buttonLeaves1;
+		//branchPair[3] = buttonLeaves2;
+//		mergeOneBranch_naiveDouble(pathsolutions);
+		merge_naiveDouble (branchPair,new int [2],0);
 		//return id pair list
-		return solutionDoubleLayerIDList;
+		return solutionPairIDList;
 
 	}//end mergeTwoBranch
 
@@ -223,25 +233,87 @@ public class mergeAllPathSolutions  {
 	static void merge_naiveDouble( Vector [] data, int [] pointer, int branchref){ //since we have at most two branch nodes, branch ref is either 0 or 1
 
 		int [] lastSameValue = new int [1];
+		if(branchref == 1) {
+			while (!endAll(data, pointer)) {
 
-		while (!endAll(data,pointer)){
+				if (!equals_naiveDouble(data, pointer, branchref)) {
+					int min = mindata(data, pointer, branchref);
+					if (!isCommonOne(data[min], pointer[min], lastSameValue, branchref))
+						data[min].removeElementAt(pointer[min]);
+					else
+						pointer[min]++;
 
-			if (!equals_naiveDouble(data,pointer,branchref)){
-				int min = mindata (data,pointer,branchref);
-				if ( !isCommonOne(data[min],pointer[min],lastSameValue, branchref))
-					data[min].removeElementAt(pointer[min]);
-				else
-					pointer[min]++;
+				}//end if
+				else {
+					Vector v = ((solutionKey) data[0].elementAt(pointer[0])).branchnodes;
+					lastSameValue = (int[]) v.elementAt(branchref);
+					for (int i = 0; i < pointer.length; i++)
+						pointer[i]++;
+				}//end else
 
-			}//end if
-			else{	Vector v = ((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
-				lastSameValue = (int [])v.elementAt(branchref);
-				for(int i=0;i<pointer.length;i++)
-					pointer[i]++;
-			}//end else
+			}//end while
+		}
+		else if(branchref == 0){
+			while (!endAll(data, pointer)) {
+				if (!equals_naiveDouble(data, pointer, branchref)) {
+					int min = mindata(data, pointer, branchref);
+					if (!isCommonOne(data[min], pointer[min], lastSameValue, branchref))
+						data[min].removeElementAt(pointer[min]);
+					else
+						pointer[min]++;
+				}//end if
+				else {
+					Vector v = ((solutionKey) data[0].elementAt(pointer[0])).branchnodes;
+					lastSameValue = (int[]) v.elementAt(branchref);
+					for (int i = 1; i < pointer.length; i++)
+						pointer[i]++;
+				}//end else
+			}
+		}
 
-		}//end while
+	}//end merge
 
+	static void merge_double( Vector [] data, int [] pointer, int branchref){ //since we have at most two branch nodes, branch ref is either 0 or 1
+
+		int [] lastSameValue = new int [1];
+		if(branchref == 1) {
+			while (!endAll(data, pointer)) {
+
+				if (!equals_double(data, pointer, branchref)) {
+					int min = mindata(data, pointer, branchref);
+					if (!isCommonOne(data[min], pointer[min], lastSameValue, branchref))
+						data[min].removeElementAt(pointer[min]);
+					else
+						pointer[min]++;
+
+				}//end if
+				else {
+					Vector v = ((solutionKey) data[0].elementAt(pointer[0])).branchnodes;
+					lastSameValue = (int[]) v.elementAt(branchref);
+					for (int i = 0; i < pointer.length; i++)
+						pointer[i]++;
+				}//end else
+
+			}//end while
+		}
+		else if(branchref == 0){
+			while (!endAll(data, pointer)) {
+
+				if (!equals_double(data, pointer, branchref)) {
+					int min = mindata(data, pointer, branchref);
+					if (!isCommonOne(data[min], pointer[min], lastSameValue, branchref))
+						data[min].removeElementAt(pointer[min]);
+					else
+						pointer[min]++;
+				}//end if
+				else {
+					Vector v = ((solutionKey) data[0].elementAt(pointer[0])).branchnodes;
+					lastSameValue = (int[]) v.elementAt(branchref);
+					for (int i = 1; i < pointer.length; i++)
+						pointer[i]++;
+				}//end else
+			}
+		}
 
 	}//end merge
 
@@ -270,8 +342,8 @@ public class mergeAllPathSolutions  {
 //						utilities.PrintIntArray(p,"pair node");
 						solutionCount++;
 //						try{
-//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinResult.txt",true));
-//						out.write(utilities.ArrayToString(c)+" "+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
+//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinSingleLayerSolutionCount.txt",true));
+//						out.write(solutionCount+". "+utilities.ArrayToString(c)+" "+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
 //						//you are trying to write
 //						out.close();
 //						}
@@ -322,6 +394,7 @@ public class mergeAllPathSolutions  {
 				for(int[] c:currentNodeIDList){
 					for(int[] p:pairNodeIdList){
 						List<String> pairIDList = new ArrayList<>();
+						//convert ID int array to string
 						pairIDList.add(utilities.ArrayToString(c));
 						pairIDList.add(utilities.ArrayToString(p));
 						solutionPairIDList.add(pairIDList);
@@ -339,8 +412,81 @@ public class mergeAllPathSolutions  {
 
 	}//end equals
 
-	static boolean equals_naiveDouble(Vector [] data,int [] pointer, int branchref){
+	static boolean equals_double(Vector [] data,int [] pointer, int branchref){
+		//@@@
+		for(int i=0;i<data.length;i++)
+			if (data[i].size() == pointer[i])
+				return  false;
 
+		Vector v0 =((solutionKey)data[0].elementAt(pointer[0])).branchnodes;
+
+		int [] common = (int [])v0.elementAt(branchref);
+
+		List<int []> currentNodeIDList = ((solutionKey)data[0].elementAt(pointer[0])).currentNode;
+
+		if(branchref == 1){
+			for(int i=1;i<data.length;i++)
+			{
+				//for(int j=pointer[i];j<data[i].size();j++) {
+				Vector v = ((solutionKey) data[i].elementAt(pointer[i])).branchnodes;
+
+				int[] datakey = (int[]) v.elementAt(branchref);
+
+				if (utilities.isEqual(datakey, common)) {
+					List<int[]> pairNodeIdList = ((solutionKey) data[i].elementAt(pointer[i])).currentNode;
+
+					for (int[] c : currentNodeIDList) {
+						for (int[] p : pairNodeIdList) {
+							List<String> pairIDList = new ArrayList<>();
+							buttonLeaves1.add(data[0].elementAt(pointer[0]));//tag d
+							buttonLeaves2.add(p);//tag e
+
+						}
+					}
+				} else
+					return false;
+
+			}}//}//end for
+		else if(branchref == 0){
+
+			for(int i=1;i<data.length;i++)
+			{
+				//for(int j=pointer[i];j<data[i].size();j++) {
+				//branch nodes of compare node
+				Vector v = ((solutionKey) data[i].elementAt(pointer[i])).branchnodes;
+
+				int[] datakey = (int[]) v.elementAt(branchref);
+
+				if (utilities.isEqual(datakey, common)) {
+					List<int[]> pairNodeIdList = ((solutionKey) data[i].elementAt(pointer[i])).currentNode;
+
+					for (int[] c : currentNodeIDList) {
+						for (int[] p : pairNodeIdList) {
+							solutionCount++;
+							try{
+								BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinDoubleLayerResultCount100.txt",true));
+								out.write(solutionCount+". "+utilities.ArrayToString(c)+","+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
+								//you are trying to write
+								out.close();
+							}
+							catch (IOException e)
+							{
+								System.out.println("Exception ");
+
+							}
+						}}
+
+				} else
+					return false;
+
+			}}
+
+		return true;
+
+	}//end equals
+
+	static boolean equals_naiveDouble(Vector [] data,int [] pointer, int branchref){
+		//@@@
 		for(int i=0;i<data.length;i++)
 			if (data[i].size() == pointer[i])
 				return  false;
@@ -352,51 +498,77 @@ public class mergeAllPathSolutions  {
 		List<int []> currentNodeIDList = ((solutionKey)data[0].elementAt(pointer[0])).currentNode;
 		String currentNode = ((solutionKey)data[0].elementAt(pointer[0])).leaf;
 
+		if(branchref == 1){
 		for(int i=1;i<data.length;i++)
 		{
-			Vector v =((solutionKey)data[i].elementAt(pointer[i])).branchnodes;
+			//for(int j=pointer[i];j<data[i].size();j++) {
+				Vector v = ((solutionKey) data[i].elementAt(pointer[i])).branchnodes;
 
-			int [] datakey = (int [])v.elementAt(branchref);
+				int[] datakey = (int[]) v.elementAt(branchref);
 
-			if (utilities.isEqual (datakey, common)) {
-				//System.out.println("pair:");
-				//String pairNode = ((solutionKey)data[i].elementAt(pointer[i])).leaf;
-				List<int []> pairNodeIdList = ((solutionKey)data[i].elementAt(pointer[i])).currentNode;
-				//utilities.PrintPair(currentNodeIDList, currentNode,pairNodeIdList,pairNode);
+				if (utilities.isEqual(datakey, common)) {
+					List<int[]> pairNodeIdList = ((solutionKey) data[i].elementAt(pointer[i])).currentNode;
 
-
-				for(int[] c:currentNodeIDList){
-					for(int[] p:pairNodeIdList){
-						List<String> pairIDList = new ArrayList<>();
-						pairIDList.add(utilities.ArrayToString(c));
-						pairIDList.add(utilities.ArrayToString(p));
-						solutionPairIDList.add(pairIDList);
-						solutionPairCount++;
-						if(solutionPairCount>1){
-							String previousID = solutionPairIDList.get(solutionPairCount-2).get(0);
-							String previousPairID = solutionPairIDList.get(solutionPairCount-2).get(1);
-							String currentID = solutionPairIDList.get(solutionPairCount-1).get(0);
-							String currentPairID = solutionPairIDList.get(solutionPairCount-1).get(1);
-							if(previousID.equals(currentID) && (! previousPairID.equals(currentPairID))){
-								solutionDoubleLayerIDList.add(Arrays.asList(currentID,previousPairID,currentPairID));
-							}
-							else if (previousPairID.equals(currentPairID) && (! previousID.equals(currentID))){
-								solutionDoubleLayerIDList.add(Arrays.asList(currentPairID,previousID,currentID));
-							}
+					for (int[] c : currentNodeIDList) {
+						for (int[] p : pairNodeIdList) {
+							List<String> pairIDList = new ArrayList<>();
+							buttonLeaves1.add(data[0].elementAt(pointer[0]));//tag d
+							buttonLeaves2.add(p);//tag e
+//							try {
+//								BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/tjFastPairResult.txt", true));
+//								out.write(utilities.ArrayToString(common)+","+utilities.ArrayToString(c)+","+utilities.ArrayToString(p) + "\r\n");  //Replace with the string
+//								//you are trying to write
+//								out.close();
+//							} catch (IOException e) {
+//								System.out.println("Exception ");
+//
+//							}
 
 						}
-
 					}
-				}
-			}
-			else
-				return false;
+				} else
+					return false;
 
-		}//end for
+			}}//}//end for
+			else if(branchref == 0){
+
+			for(int i=1;i<data.length;i++)
+			{
+				//for(int j=pointer[i];j<data[i].size();j++) {
+				//branch nodes of compare node
+				Vector v = ((solutionKey) data[i].elementAt(pointer[i])).branchnodes;
+
+				int[] datakey = (int[]) v.elementAt(branchref);
+
+				if (utilities.isEqual(datakey, common)) {
+					List<int[]> pairNodeIdList = ((solutionKey) data[i].elementAt(pointer[i])).currentNode;
+
+					for (int[] c : currentNodeIDList) {
+						for (int[] p : pairNodeIdList) {
+								List<String> pairIDList = new ArrayList<>();
+								pairIDList.add(utilities.ArrayToString(p));
+								pairIDList.add(utilities.ArrayToString((int[]) buttonLeaves2.get(pointer[i])));
+								//the next line is to add the solution id of b to solutionList. Since the rdb table does not contains
+								pairIDList.add(utilities.ArrayToString(c));
+
+								solutionPairIDList.add(pairIDList);
+								solutionPairCount++;
+//								try {
+//									BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/NAIVEtjFastPairFinalResult.txt", true));
+//									out.write(pairIDList + "\r\n");  //Replace with the string
+//									//you are trying to write
+//									out.close();
+//								} catch (IOException e) {
+//									System.out.println("Exception ");
+//
+//								}
+						}}
+					} else
+						return false;
+
+				}}
 
 		return true;
-
-
 
 	}//end equals
 

@@ -8,8 +8,6 @@ import org.xml.sax.helpers.*;
 import java.util.*;
 import java.io.*;
 
-import produce.labelMatching;
-
 
 public class queryAnalysis extends DefaultHandler {
 
@@ -105,9 +103,7 @@ public class queryAnalysis extends DefaultHandler {
 
         System.out.println("begin analysis document !");
 
-        try { // ???????try????????????????
-
-            //?????????§Ö??????UTF8?????????????????—¨
+        try {
             DTDTable DTDInfor = loadDataSet.produceDTDInformation(basicDocuemnt);
 
             long totalbeginTime = System.currentTimeMillis();
@@ -118,7 +114,7 @@ public class queryAnalysis extends DefaultHandler {
             long totalLoadTime = 0L;
             long totalJoinTime = 0L;
 
-            Query.preComputing(DTDInfor); //???????????§Þ????§»Query???????????????
+            Query.preComputing(DTDInfor);
 
             loadDataSet d = new loadDataSet();
             System.out.println("begin load data !");
@@ -131,7 +127,7 @@ public class queryAnalysis extends DefaultHandler {
                 tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
             }
 
-            List<labelMatching.Match> re = lm.getSolution(tagList.get(0),tagList.get(1)); // get xml value match table result
+            List<Vector> re = lm.getSolution(tagList); // get xml value match table result
 //            for(labelMatching.Match m:re){
 //                try {
 //                    BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinAfterRemoveResult.txt",true));
@@ -152,14 +148,27 @@ public class queryAnalysis extends DefaultHandler {
             //long tjFastbyAddTime = 0L;
             //System.out.println("start multi-times tjFast");
             int solutionCount = 0;
+
+//            for(int i = 0;i<100;i++){
+//                part0.add(o[0].get(i));
+//                part1.add(o[1].get(i));
+//            }
+//            Vector partO[] = new Vector[2];
+//            partO[0] = part0;
+//            partO[1] = part1;
             for(int i=0;i<re.size();i++) {
                 long loadbeginTime = System.currentTimeMillis();
                 Hashtable[] alldata = d.loadAllLeafData(re.get(i), DTDInfor,tagList);
 
+                //for double layer query only
+//                alldata[0].put(tagList.get(2),partO[0]);
+//                alldata[1].put(tagList.get(2), partO[1]);
 
+//                alldata[0].put(tagList.get(2),o[0]);
+//                alldata[1].put(tagList.get(2), o[1]);
                 //System.out.println("Query leaves:" + Query.getLeaves());
 
-
+//                System.out.println("i:"+i);
                 loadendTime = System.currentTimeMillis();
                 //System.out.println("load data time is " + (loadendTime - loadbeginTime));
                 totalLoadTime += loadendTime - loadbeginTime;
@@ -172,6 +181,7 @@ public class queryAnalysis extends DefaultHandler {
                 TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
 
                 solutionCount = join.beginJoin();
+//                System.out.println("solutionCount:"+solutionCount);
                 joinendTime = System.currentTimeMillis();
                 //System.out.println("join data time is " + (joinendTime - joinbeginTime));
                 totalJoinTime += joinendTime - joinbeginTime;

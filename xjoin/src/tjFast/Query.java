@@ -247,7 +247,19 @@ public class Query {
 		return (String)ParentTable.get(q);
 		
 	}//end getParent 
-	
+
+	static String getRootSingleChild(){
+		Vector leaves = getLeaves();
+		String singleChild = null;
+		for(int i=0;i<leaves.size();i++){
+			String leave = leaves.get(i).toString();
+			if(getParent(leave).equals(getRoot()) && isLeaf(leave)) {
+				singleChild = leave;
+			}
+		}
+		return singleChild;
+	}
+
 	static int [] getIgnoreWildcardQuery(String leave){
 		
 		return (int [])queryIgnoreWildcardsLastPart.get(leave);

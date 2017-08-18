@@ -83,7 +83,10 @@ public class loadDataSet {
 
             }//end while
 
-        }catch(Exception e){
+        }catch (EOFException eofex) {
+            //do nothing
+        }
+        catch(Exception e){
             System.out.println("e is "+e);
         }//end catch
         finally {
@@ -101,7 +104,7 @@ public class loadDataSet {
 
 
 
-    Hashtable[] loadAllLeafData(Match m, DTDTable DTDInfor,List<String> tagList) throws Exception{
+    Hashtable[] loadAllLeafData(Vector candidate, DTDTable DTDInfor,List<String> tagList) throws Exception{
 
 
         allData = new Hashtable();
@@ -110,14 +113,12 @@ public class loadDataSet {
         //////
         //System.out.println("Row:"+m.toString());
 
-        //tag list -- b,c (only consider the simplest case)
-        Vector l[] = loadData(tagList.get(0), m.getL_ID(), DTDInfor);
-        allOriginalData.put(tagList.get(0), l[0]);
-        allData.put(tagList.get(0), l[1]);
+        for(int tag=0;tag<tagList.size();tag++){
+            Vector v[] = loadData((List<int[]>) candidate.get(tag*2+1),DTDInfor);
+            allOriginalData.put(tagList.get(tag), v[0]);
+            allData.put(tagList.get(tag), v[1]);
+        }
 
-        Vector r[] = loadData(tagList.get(1), m.getR_ID(),DTDInfor);
-        allOriginalData.put(tagList.get(1), r[0]);
-        allData.put(tagList.get(1), r[1]);
 
 
         Hashtable[] result = new Hashtable[2];//???[0] ????????,??	[1]??tag?
@@ -129,6 +130,8 @@ public class loadDataSet {
         return result;
 
     }//end loadAllLeafData
+
+
 
     int[] convertStrToInt(String ID){
         String id = ID.substring(1);
@@ -142,7 +145,7 @@ public class loadDataSet {
     }
 
 
-        Vector[] loadData(String tag, List idList, DTDTable DTDInfor) {    //???loaddata[0] ????????,??	loaddata[1]??tag?
+        Vector[] loadData(List<int[]> idList, DTDTable DTDInfor) {    //???loaddata[0] ????????,??	loaddata[1]??tag?
 
         Vector[] loadedData = new Vector[2];
         loadedData[0] = new Vector();
@@ -152,7 +155,7 @@ public class loadDataSet {
             //System.out.println("now load data:" + tag);
             for(int i=0;i< idList.size();i++) {
 
-                int[] result = convertStrToInt(idList.get(i).toString());
+                int[] result = idList.get(i);
 
                 //int[] result = convertToIntegers(data); // result--tag ID
 

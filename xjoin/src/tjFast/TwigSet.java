@@ -138,6 +138,7 @@ public class TwigSet {
 
     int beginJoin(){
         //System.out.println("begin join");
+        long joinBeginTime = System.currentTimeMillis();
         List<List<String>> idList_all = new ArrayList<>();
         //�������ڲ���
         /*for(int i=0;i<leaves.size();i++)
@@ -148,7 +149,7 @@ public class TwigSet {
 
         //�������ڲ���
 
-        long begintime = System.currentTimeMillis();
+        //long begintime = System.currentTimeMillis();
         Vector leaves = Query.getLeaves();
         for (int i = 0; i < leaves.size(); i++) {
             String s = (String) leaves.elementAt(i);
@@ -180,7 +181,8 @@ public class TwigSet {
         if (leaves.size() > 1)
             emptySets();
 
-        long endtime = System.currentTimeMillis();
+        //long joinEndtime = System.currentTimeMillis();
+        //System.out.println("tjFast Join Time:"+(joinEndtime-joinBeginTime));
         //////
         //System.out.println(" Total CPU time is "+ (endtime-begintime)+" ms.");
 
@@ -189,11 +191,13 @@ public class TwigSet {
             if (numberOfSolutions > 0) {
                 if (Query.getBranchNode().length == 1)
                     totalSolutionCount = mergeAllPathSolutions.mergeOneBranch(finalResults);
-                else
-                    mergeAllPathSolutions.mergeTwoBranchs(finalResults);
-                //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));
-                //totalSolutionCount = mergeAllPathSolutions.getPathNumber(finalResults, leaves);
-                //System.out.println(showAllPathSolutions());
+                else {
+                    //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
+                    totalSolutionCount = mergeAllPathSolutions.mergeTwoBranchs(finalResults);
+                    //System.out.println("solution pair number is:" + solutionPairIDList.size());
+                    //totalSolutionCount = totalSolutionCount + solutionPairIDList;
+                }
+
             }
         }//end if (leaves.size() > 1)
         return totalSolutionCount;
@@ -250,7 +254,7 @@ public class TwigSet {
         //System.out.println(" Total CPU time is "+ (endtime-begintime)+" ms.");
 
         if (leaves.size() > 1) {
-            System.out.println(" Number of path solutions is " + numberOfSolutions);
+            System.out.println(" Number of path solutions(points count) is " + numberOfSolutions);
             if (numberOfSolutions > 0) {
                 if (Query.getBranchNode().length == 1){
                     //merge solution
@@ -259,13 +263,19 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod naive = new naiveMethod();
-                    List<List<String>> result = naive.getResult(solutionPairIDList,allTagIDValue);
-                    System.out.println("Final solution number is:"+result.size());
+                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println("Final solution number is:"+result);
                 }
                 else{
                     //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
                     List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeTwoBranchs_naiveDouble(finalResults);
                     System.out.println("solution pair number is:"+solutionPairIDList.size());
+                    endtime = System.currentTimeMillis();
+                    System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
+                    //get solution pair value
+                    naiveMethod naive = new naiveMethod();
+                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println("Final solution number is:"+result);
                 }
                 //System.out.println("final result:"+finalResults.get("b"));
                 //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));

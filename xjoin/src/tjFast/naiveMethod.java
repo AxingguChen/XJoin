@@ -17,7 +17,10 @@ public class naiveMethod {
         //loop each pair of result ID and find its value
         for (List<String> p : pairIDList) {
             List<String> valueIDList = new ArrayList<>();
-            //loop each tag of one pair
+            //loop each tag of one pair-----Here we set i<p.size() to i<2
+            // since in double layer, the solution of b(last tag in pairIDList) does not have value in xml and rdb
+            // and in single layer, 2 tag is also enough in most cases.
+            // We may need to change here to fit more complex cases
             for (int i = 0; i < p.size(); i++) {
                 //the tag order is the same when load allTagIDValue
                 String id = p.get(i);
@@ -73,7 +76,7 @@ public class naiveMethod {
     long totalT = 0;
     public List<List<String>> loadRDBValue(List<String> tagList) throws Exception {
         List<List<String>> rdbValue = new ArrayList<>();
-        String csvFile = "xjoin/src/table.csv";
+        String csvFile = "xjoin/src/buildTest1w.csv";
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -122,7 +125,6 @@ public class naiveMethod {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("T:"+totalT);
         System.out.println("valid read RDB row:" + readRDBcount);
 
         return rdbValue;
@@ -174,7 +176,19 @@ public class naiveMethod {
             String table_value = rdbValue.get(i).get(0);
             // odd-value, even-id. 0 is value
             String xml_value = xmlList.get(j).get(0);
-
+//            if(j == 28892){
+//
+//                System.out.println();
+//            }
+//
+//            if(j==35473){
+//
+//                System.out.println();
+//            }
+//            if(xmlList.get(j).get(5).equals("/1/144/1")){
+//
+//                System.out.println();
+//            }
             int compare_result = table_value.compareTo(xml_value);
             if (compare_result == 0) { //equals
                 Boolean flag = true;
@@ -183,12 +197,16 @@ public class naiveMethod {
                     String table_nextValue = rdbValue.get(i).get(tagCursor);
                     // odd-value, even-id. 0 is value
                     String xml_nextValue = xmlList.get(j).get(tagCursor*2);
-                    flag = ((table_nextValue.compareTo(xml_nextValue)==0)&&flag);
-                    if(flag==false) break;
+
+                    int compare = table_nextValue.compareTo(xml_nextValue);
+                    flag = ((compare==0)&&flag);
+                    if(compare<0) {i++;break;}
+                    else if(compare >0) {j++;break;}
                 }
                 //if match successfully, move xml cursor to next row
-                if(flag==true) joinList.add(xmlList.get(j));
-                j++;
+                if(flag==true){
+                    joinList.add(xmlList.get(j));
+                    j++;}
 
             }
             else if (compare_result < 0){ // table_value < tag_value
@@ -202,7 +220,7 @@ public class naiveMethod {
         return joinList;
     }
 
-    public List<List<String>> getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
+    public int getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
         //rdb table
         //load
         List<String> leaves = Query.getLeaves();
@@ -223,6 +241,19 @@ public class naiveMethod {
         System.out.println("sort rdb data time is " + (sortRDBendTime - sortRDBbeginTime));
         System.out.println("rdbValue:"+rdbValue.size());
 
+//        try {
+//            for(List<String> l:rdbValue){
+//
+//                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/rdbValue.txt",true));
+//                out.write(l+"\r\n");  //Replace with the string
+//                //you are trying to write
+//                out.close();
+//            }}
+//        catch (IOException e)
+//        {
+//            System.out.println("Exception ");
+//
+//        }
         //XML
         //load
         long loadbeginTime = System.currentTimeMillis();
@@ -248,7 +279,12 @@ public class naiveMethod {
         long joinendtime = System.currentTimeMillis();
         System.out.println("join xml&rdb data time is " + (joinendtime - joinbegintime));
 
-
+        Collections.sort(resultList,new Comparator<List<String>>(){
+            public int compare(List<String> l1, List<String> l2){
+                return l1.get(4).compareTo(l2.get(4));
+            }}
+        );
+//        System.out.println(resultList);
 
         //System.out.println("final result:"+resultList);
         //following code is to test if all the result is exist in rdb table
@@ -271,7 +307,7 @@ public class naiveMethod {
 //            for(List<String> l:resultList){
 //
 //                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/naiveResult.txt",true));
-//                out.write(l.get(0)+" "+l.get(1)+" "+l.get(2)+" "+l.get(3)+"\r\n");  //Replace with the string
+//                out.write(l+"\r\n");  //Replace with the string
 //                //you are trying to write
 //                out.close();
 //            }}
@@ -281,7 +317,7 @@ public class naiveMethod {
 //
 //            }
 
-        return resultList;
+        return resultList.size();
     }
 
     static public void main(String[] args) throws Exception{
