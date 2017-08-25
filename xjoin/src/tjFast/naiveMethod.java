@@ -18,9 +18,6 @@ public class naiveMethod {
         for (List<String> p : pairIDList) {
             List<String> valueIDList = new ArrayList<>();
             //loop each tag of one pair-----Here we set i<p.size() to i<2
-            // since in double layer, the solution of b(last tag in pairIDList) does not have value in xml and rdb
-            // and in single layer, 2 tag is also enough in most cases.
-            // We may need to change here to fit more complex cases
             for (int i = 0; i < p.size(); i++) {
                 //the tag order is the same when load allTagIDValue
                 String id = p.get(i);
@@ -76,7 +73,7 @@ public class naiveMethod {
     long totalT = 0;
     public List<List<String>> loadRDBValue(List<String> tagList) throws Exception {
         List<List<String>> rdbValue = new ArrayList<>();
-        String csvFile = "xjoin/src/buildTest1w.csv";
+        String csvFile = "xjoin/src/buildTest1ww.csv";
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -176,7 +173,7 @@ public class naiveMethod {
             String table_value = rdbValue.get(i).get(0);
             // odd-value, even-id. 0 is value
             String xml_value = xmlList.get(j).get(0);
-//            if(j == 28892){
+//            if(j == 5140){
 //
 //                System.out.println();
 //            }
@@ -234,7 +231,19 @@ public class naiveMethod {
         long sortRDBbeginTime = System.currentTimeMillis();
         Collections.sort(rdbValue,new Comparator<List<String>>(){
             public int compare(List<String> l1, List<String> l2){
-                return l1.get(0).compareTo(l2.get(0));
+                int length = l1.size();
+                int result = 0;
+                for(int i=0; i<length; i++){
+                    int compa = (l1.get(i)).compareTo(l2.get(i));
+                    if(compa < 0){
+                        result = -1;
+                        break;
+                    }
+                    else if(compa == 0)
+                        result = 0;
+                    else {result = 1;break;}
+                }
+                return result;
             }}
         );
         long sortRDBendTime = System.currentTimeMillis();
@@ -257,7 +266,13 @@ public class naiveMethod {
         //XML
         //load
         long loadbeginTime = System.currentTimeMillis();
-        List<List<String>> xmlList = getValuePair(solutionPairIDList,allTagIDValue);
+
+        //for AD double layer
+        List<HashMap<String, String>> ADDouble = new ArrayList<>();
+        ADDouble.add(allTagIDValue.get(1));
+        ADDouble.add(allTagIDValue.get(2));
+        ADDouble.add(allTagIDValue.get(0));
+        List<List<String>> xmlList = getValuePair(solutionPairIDList,ADDouble);
         long loadendTime = System.currentTimeMillis();
         System.out.println("Find xml value by id time is " + (loadendTime - loadbeginTime));
 
@@ -265,7 +280,22 @@ public class naiveMethod {
         long sortbeginTime = System.currentTimeMillis();
         Collections.sort(xmlList,new Comparator<List<String>>(){
             public int compare(List<String> l1, List<String> l2){
-                return l1.get(0).compareTo(l2.get(0));
+                int length = l1.size();
+                int result = 0;
+                for(int i=0; i<length ; i=i+2){
+                    System.out.println("i:"+i);
+                    System.out.println("L1:"+l1.get(i)+",L2:"+l2.get(i));
+                    int compa = (l1.get(i)).compareTo(l2.get(i));
+//                    System.out.println(compa);
+                    if(compa < 0){
+                        result = -1;
+                        break;
+                    }
+                    else if(compa == 0)
+                        result = 0;
+                    else {result = 1;break;}
+                }
+                return result;
             }}
         );
         long sortendTime = System.currentTimeMillis();
@@ -279,11 +309,6 @@ public class naiveMethod {
         long joinendtime = System.currentTimeMillis();
         System.out.println("join xml&rdb data time is " + (joinendtime - joinbegintime));
 
-        Collections.sort(resultList,new Comparator<List<String>>(){
-            public int compare(List<String> l1, List<String> l2){
-                return l1.get(4).compareTo(l2.get(4));
-            }}
-        );
 //        System.out.println(resultList);
 
         //System.out.println("final result:"+resultList);
@@ -316,6 +341,21 @@ public class naiveMethod {
 //                System.out.println("Exception ");
 //
 //            }
+
+//        try (BufferedReader br = new BufferedReader(new FileReader("xjoin/src/xjoinDoubleLayerResultCountFull.txt"))) {
+//
+//            String sCurrentLine;
+//
+//            while ((sCurrentLine = br.readLine()) != null) {
+//                String line = sCurrentLine.split(",")[1];
+//
+//            }
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
+
 
         return resultList.size();
     }

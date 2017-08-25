@@ -34,9 +34,15 @@ public class mergeAllPathSolutions  {
 		return pathnumber;
 		
 	}//end mergeOneBranch
+
+	public static int getSolutionCount() {
+		return solutionCount;
+	}
+
 	static int solutionCount=0;
+
 	static int mergeOneBranch(Hashtable pathsolutions){
-		//solutionCount = 0;
+		solutionCount = 0;
 		Vector leaves =	Query.getLeaves();
 
 		int numberOfleaves = leaves.size();
@@ -56,6 +62,7 @@ public class mergeAllPathSolutions  {
 
 
 	static int mergeTwoBranchs(Hashtable pathsolutions){
+		solutionCount = 0;
 
 		String [] branches = Query.getBranchNode();//branches[0] is ganranteed to be an ancestor node
 
@@ -92,10 +99,18 @@ public class mergeAllPathSolutions  {
 		//branchPair[3] = buttonLeaves2;
 //		mergeOneBranch_naiveDouble(pathsolutions);
 		merge_double (branchPair,new int [2],0);
-		//return id pair list
+//		try{
+//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinSolutionCount.txt",true));
+//						out.write(solutionCount+"\r\n");  //Replace with the string
+//						//you are trying to write
+//						out.close();
+//						}
+//            			catch (IOException e)
+//						{
+//							System.out.println("Exception ");
+//
+//						}
 		return solutionCount;
-
-
 	}//end mergeTwoBranch
 		
 	static List<List<String>> mergeOneBranch_naive(Hashtable pathsolutions){
@@ -342,7 +357,7 @@ public class mergeAllPathSolutions  {
 //						utilities.PrintIntArray(p,"pair node");
 						solutionCount++;
 //						try{
-//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinSingleLayerSolutionCount.txt",true));
+//						BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinSingleLayerSolution.txt",true));
 //						out.write(solutionCount+". "+utilities.ArrayToString(c)+" "+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
 //						//you are trying to write
 //						out.close();
@@ -464,7 +479,7 @@ public class mergeAllPathSolutions  {
 						for (int[] p : pairNodeIdList) {
 							solutionCount++;
 							try{
-								BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinDoubleLayerResultCount100.txt",true));
+								BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinDoubleLayerResultCountFull.txt",true));
 								out.write(solutionCount+". "+utilities.ArrayToString(c)+","+utilities.ArrayToString(p)+"\r\n");  //Replace with the string
 								//you are trying to write
 								out.close();

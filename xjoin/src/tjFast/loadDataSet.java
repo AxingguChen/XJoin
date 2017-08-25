@@ -2,8 +2,7 @@ package tjFast;
 
 import java.util.*;
 import java.io.*;
-import produce.labelMatching;
-import produce.labelMatching.Match;
+import produce.labelMatching_old;
 
 public class loadDataSet {
 
@@ -12,7 +11,7 @@ public class loadDataSet {
     Hashtable allOriginalData;
 
     int totalElement = 0;
-    labelMatching lm = new labelMatching();
+    labelMatching_old lm = new labelMatching_old();
 
     List<HashMap<String, String>> allTagIDValue = new ArrayList<>();
     public List<HashMap<String, String>> getAllTagIDValue() {
@@ -57,8 +56,8 @@ public class loadDataSet {
             r_v = new RandomAccessFile("xjoin/src/produce/outputData/" + tag + "_v", "rw");//read value file
             r_v.seek(0);
             String value = null;
-            //int count = 0;
-            while ((value = r_v.readUTF()) != null )//&& count< 3000 )
+            int count = 0;
+            while ((value = r_v.readUTF()) != null )
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);
                 int [] data = new int [len];
@@ -79,7 +78,7 @@ public class loadDataSet {
                 loadedData[1].addElement(tagInt);
 
                 totalElement++;
-                //count++;
+                count++;
 
             }//end while
 

@@ -123,7 +123,7 @@ public class queryAnalysis_naive extends DefaultHandler {
             Query.preComputing(DTDInfor);
 
             loadDataSet d = new loadDataSet();
-            System.out.println("begin load data !");
+            System.out.println("begin load data !"+Query.getLeaves());
 
 
             long loadbeginTime = System.currentTimeMillis();

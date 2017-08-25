@@ -128,7 +128,7 @@ public class queryAnalysis extends DefaultHandler {
             }
 
             List<Vector> re = lm.getSolution(tagList); // get xml value match table result
-//            for(labelMatching.Match m:re){
+//            for(labelMatching_old.Match m:re){
 //                try {
 //                    BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinAfterRemoveResult.txt",true));
 //                    out.write(m.getL_v()+" "+m.getL_ID()+"\r\n"+m.getR_v()+" "+m.getR_ID()+"\r\n"+"\r\n");  //Replace with the string
@@ -180,7 +180,7 @@ public class queryAnalysis extends DefaultHandler {
 
                 TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
 
-                solutionCount = join.beginJoin();
+                solutionCount += join.beginJoin();
 //                System.out.println("solutionCount:"+solutionCount);
                 joinendTime = System.currentTimeMillis();
                 //System.out.println("join data time is " + (joinendTime - joinbeginTime));

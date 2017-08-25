@@ -13,7 +13,7 @@ public class labelMatching {
     // this function still need modification to meet analysis the tag name automatically
     public List<Vector> readRDBValue_line(List<String> tagList) throws Exception{
         List<Vector> result = new ArrayList<>();
-        String csvFile = "xjoin/src/buildTest1w.csv";
+        String csvFile = "xjoin/src/table.csv";
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -111,7 +111,7 @@ public class labelMatching {
             String value = null;
             loadDataSet lds = new loadDataSet();
             loadDataSet load = new loadDataSet();
-            while ((value = r_v.readUTF()) != null ) {
+            while ((value = r_v.readUTF()) != null) {
                 byte len = r.readByte();
                 int[] data = new int[len];
                 String id = "";
@@ -175,27 +175,21 @@ public class labelMatching {
                 //String rightValue = result.get(i).getR_v();
                 //List<String> id_list = new ArrayList<>();//To store id list for every row
                 String tag_value = (String) tagList.get(j).get(0); // 0-value, 1-id
-
-                if(tagList.get(j).get(1).equals("1/144/1")){
-
-                    System.out.println();
-                }
                 int compare_result = table_value.compareTo(tag_value);
                 if (compare_result == 0) { //equals
                     ((List<int[]>) result.get(i).get(tag*2+1)).add((int[]) tagList.get(j).get(1));// add corresponding tag id
-                    if (j + 1 != tagList.size())
+                    if ((j + 1) != tagList.size())
                         j++;
-                    else {//tag list has goes to the end, so add the iterator of table list
+                    else {//tag list has goes to the end, so add the iterator of the table list
                         i++;
                     }
                 } else if (compare_result < 0) { // table_value < tag_value
                     //previous table value equals current table value
                     if (i != result.size() && i > 0 && table_value.equals(result.get(i - 1).get(tag*2))) {
-                        ((List<int[]>) result.get(i).get(tag*2+1)).addAll((List<int[]>) result.get(i - 1).get(tag*2+1));
-                        i++;
-                    } else {
-                        i++;
+                        ((List<int[]>) result.get(i).get(tag * 2 + 1)).addAll((List<int[]>) result.get(i - 1).get(tag * 2 + 1));
                     }
+                        i++;
+
                 } else if (compare_result > 0) { // table_value > tag_value
                     j++;
                 }
@@ -229,7 +223,7 @@ public class labelMatching {
         loadendTime = System.currentTimeMillis();
         ////System.out.println("Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime ));
 
-        runningResult=runningResult + "\r\n"+"Total load tag value and ID time is(include sort tag time)" + (loadendTime-loadbeginTime );
+        runningResult=runningResult + "\r\n"+"Total load tag value and ID time is(include sort table time)" + (loadendTime-loadbeginTime );
         //System.out.println(leftTag+" "+left_tag);
         //System.out.println(rightTag+" "+right_tag);
 
@@ -257,7 +251,7 @@ public class labelMatching {
         ////System.out.println("total sort table value time: " + totalSortTime);
 
         ////System.out.println("total match xml and RDB value time(include sort each row ID time): " + totalMatchTime);
-        runningResult = runningResult+"\r\n"+"total match xml and RDB value time(include sort each row ID time): " + totalMatchTime;
+        runningResult = runningResult+"\r\n"+"total match xml and RDB value time(include sort rdb time): " + totalMatchTime;
         //System.out.println(result + " size:"+result.size());
         System.out.println("before remove candidates size:"+result.size());
         List<Vector> matchResult = new ArrayList<>();
@@ -295,7 +289,8 @@ public class labelMatching {
     public static void main(String[] args) throws Exception{
         labelMatching lm = new labelMatching();
         //List<Match> re = lm.getSolution("b","c");
-        List<Vector> re = lm.getSolution(Arrays.asList("asin","price","OrderId"));
+        List<Vector> re = lm.getSolution(Arrays.asList("asin","price"));
+
         //System.out.println(re);
 //        lm.readRDBValue_line("asin","price");
 //        lm.getTagMap("asin");
