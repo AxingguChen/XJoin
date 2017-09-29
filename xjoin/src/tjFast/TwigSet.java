@@ -252,7 +252,7 @@ public class TwigSet {
         long endtime;
         //////
         //System.out.println(" Total CPU time is "+ (endtime-begintime)+" ms.");
-
+        System.out.println("Merge");
         if (leaves.size() > 1) {
             System.out.println(" Number of path solutions(points count) is " + numberOfSolutions);
             if (numberOfSolutions > 0) {
