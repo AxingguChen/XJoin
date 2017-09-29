@@ -53,7 +53,7 @@ public class outputLabel  {
     		{
     			int outputByte [] = IntegerToUTF8(labels[i]);
     			totalLength += outputByte.length;
-   			v.addElement(outputByte);
+   				v.addElement(outputByte);
     		}//end for
     		
     		if (totalLength>250) System.out.println(" Too large label size !!!"+totalLength);

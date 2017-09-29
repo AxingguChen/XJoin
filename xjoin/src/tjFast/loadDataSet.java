@@ -2,7 +2,6 @@ package tjFast;
 
 import java.util.*;
 import java.io.*;
-import produce.labelMatching_old;
 
 public class loadDataSet {
 
@@ -11,7 +10,7 @@ public class loadDataSet {
     Hashtable allOriginalData;
 
     int totalElement = 0;
-    labelMatching_old lm = new labelMatching_old();
+
 
     List<HashMap<String, String>> allTagIDValue = new ArrayList<>();
     public List<HashMap<String, String>> getAllTagIDValue() {
@@ -57,7 +56,7 @@ public class loadDataSet {
             r_v.seek(0);
             String value = null;
             int count = 0;
-            while ((value = r_v.readUTF()) != null )
+            while ((value = r_v.readUTF()) != null && count < 3000)
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);
                 int [] data = new int [len];

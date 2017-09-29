@@ -88,7 +88,6 @@ public class mergeAllPathSolutions  {
 		branchPair = new Vector[2];
 		buttonLeaves1.clear();
 		buttonLeaves2.clear();
-		buttonLeaves2.clear();
 		branchPair[0] = (Vector)pathsolutions.get(singleLeave);
 
 		int [] pointer = new int [numberOfleaves];

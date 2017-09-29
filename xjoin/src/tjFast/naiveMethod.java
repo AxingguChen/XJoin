@@ -73,7 +73,7 @@ public class naiveMethod {
     long totalT = 0;
     public List<List<String>> loadRDBValue(List<String> tagList) throws Exception {
         List<List<String>> rdbValue = new ArrayList<>();
-        String csvFile = "xjoin/src/buildTest1ww.csv";
+        String csvFile = "xjoin/src/buildTest100wSmallResult.csv";
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -221,6 +221,11 @@ public class naiveMethod {
         //rdb table
         //load
         List<String> leaves = Query.getLeaves();
+
+        //for double layer AD only
+        leaves.add(leaves.get(0));
+        leaves.remove(0);
+
         //List<String> leaves = A
         long loadRDBbeginTime = System.currentTimeMillis();
         List<List<String>> rdbValue = loadRDBValue(leaves);
@@ -273,6 +278,7 @@ public class naiveMethod {
         ADDouble.add(allTagIDValue.get(2));
         ADDouble.add(allTagIDValue.get(0));
         List<List<String>> xmlList = getValuePair(solutionPairIDList,ADDouble);
+//        List<List<String>> xmlList = getValuePair(solutionPairIDList,allTagIDValue);
         long loadendTime = System.currentTimeMillis();
         System.out.println("Find xml value by id time is " + (loadendTime - loadbeginTime));
 
@@ -283,8 +289,8 @@ public class naiveMethod {
                 int length = l1.size();
                 int result = 0;
                 for(int i=0; i<length ; i=i+2){
-                    System.out.println("i:"+i);
-                    System.out.println("L1:"+l1.get(i)+",L2:"+l2.get(i));
+//                    System.out.println("i:"+i);
+//                    System.out.println("L1:"+l1.get(i)+",L2:"+l2.get(i));
                     int compa = (l1.get(i)).compareTo(l2.get(i));
 //                    System.out.println(compa);
                     if(compa < 0){

@@ -13,7 +13,6 @@ public class outputLabel {
 
     }//end outputLabel
 
-
     static void outputUTF8(String tag, int[] labels) {
 
         try {

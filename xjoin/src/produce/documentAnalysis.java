@@ -37,6 +37,7 @@ public class documentAnalysis extends DefaultHandler {
     public void startDocument() throws SAXException {
 
         tagPathStack = new Stack();
+
         labelPathStack = new Stack();
         maxSilblingStack = new Stack();
         eleValueStack = new Stack();
@@ -110,7 +111,7 @@ public class documentAnalysis extends DefaultHandler {
     public void endElement(String namespaceURI, String localName,
                            String qName)
             throws SAXException {
-
+        // removing top object
         tagPathStack.pop();
         //outputAssignedValue(tag, eleValueStack);
 

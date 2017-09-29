@@ -13,7 +13,7 @@ public class labelMatching {
     // this function still need modification to meet analysis the tag name automatically
     public List<Vector> readRDBValue_line(List<String> tagList) throws Exception{
         List<Vector> result = new ArrayList<>();
-        String csvFile = "xjoin/src/table.csv";
+        String csvFile = "xjoin/src/buildRandom1wSmallResult.csv";
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -100,7 +100,7 @@ public class labelMatching {
 
     public List<Vector> getTagMap(String tag)  throws Exception{
         List<Vector> tagList = new ArrayList<>();
-        int m=0;
+//        int m=0;
         try{
             //outputLabel.readUTF8_v(tag);
             RandomAccessFile r = null;
@@ -124,7 +124,7 @@ public class labelMatching {
                 Vector v = new Vector();
                 //next line is only for build rdb value
                 //value = value + "_"+m;
-                m++;
+//                m++;
                 v.add(value);v.add(result);
                 tagList.add(v);//value, id
 
