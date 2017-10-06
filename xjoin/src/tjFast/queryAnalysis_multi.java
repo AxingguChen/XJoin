@@ -6,8 +6,7 @@ import produce.generateValueIdPair;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -24,7 +23,8 @@ public class queryAnalysis_multi extends DefaultHandler{
     Stack TagStack;
 
     static String basicDocuemnt;
-    static ArrayList<ArrayList<Vector>> PCTables = new ArrayList<>();
+    static List<List<Vector>> myTables = new ArrayList<>();
+    static int PCCount = 0;
 
     // Parser calls this once at the beginning of a document
     public void startDocument() throws SAXException {
@@ -43,11 +43,11 @@ public class queryAnalysis_multi extends DefaultHandler{
             //cut PC to R(P,C)
             String child = (String) TagStack.peek();
             String parent = (String) TagStack.elementAt(TagStack.size() - 2);
-            ArrayList<Vector> pc = new ArrayList<>();
+            List<Vector> pc = new ArrayList<>();
             Vector v = new Vector();
             v.add(parent);v.add(child);
             pc.add(v);
-            PCTables.add(pc);
+            myTables.add(pc);
             Vector temp = (Vector) twigTagNames.get(parent);
             for (int i = 0; i < temp.size(); i++)
                 if ((((QueryDataType) temp.elementAt(i)).getTagName().equalsIgnoreCase(child))) {
@@ -100,7 +100,7 @@ public class queryAnalysis_multi extends DefaultHandler{
 
     // Parser calls this once after parsing a document
     public void endDocument() throws SAXException {
-        System.out.println(PCTables);
+        System.out.println(myTables);
 
         //do tjFast here
 
@@ -129,15 +129,125 @@ public class queryAnalysis_multi extends DefaultHandler{
     }
 
     public void getSolution() throws Exception{
-        System.out.println("getSolution:"+PCTables);
+        System.out.println("getSolution:"+ myTables);
         generateValueIdPair generate = new generateValueIdPair();
         //divide p-c relation in xml to RDBs.
-        PCTables = generate.generatePCVId(PCTables);
-        System.out.println(PCTables);
+        myTables = generate.generatePCVId(myTables);
+        System.out.println(myTables);
+        //PCCount--the count of pc relations, will be use to divide pc_table and rdb_table in myTables
+        PCCount = myTables.size();
+        //read RDB files, add rdb_tables to myTables.
+        readRDB();
+        System.out.println(myTables);
+        //Merge all tables by given merge order
+        mergeTable(Arrays.asList("a","b","c","d","e"));
 
-        //read RDB files
+    }
 
-        //Merge all tables
+    public List<List<String>> findAllCombination(List<String> myList,String newIn){
+        final int maxbit = 1 << myList.size();
+        List<List<String>> mergeLists = new ArrayList<>();
+        //for each combination given by a (binary) number 'p'...
+        for (int p = 0; p < maxbit; p++) {
+            final List<String> res = new ArrayList<String>();
+
+            //evaluate if array 'a' element at index 'i' is present in combination (and include it if so)
+            for (int i = 0; i < myList.size(); i++) {
+                if ((1 << i & p) > 0) {
+                    res.add(myList.get(i));
+                }
+            }
+            res.add(newIn);
+            mergeLists.add(res);
+        }
+        return mergeLists;
+    }
+
+    public int getColumn(Vector v, String tag){
+        for(int i=0;i<v.size();i++){
+            if(v.get(i).toString().equals(tag)){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void mergeTable(List<String> mergeOrder) throws Exception{
+        for(int order=0;order<mergeOrder.size();order++){
+            //orderLists--all relations that need to be fulfilled
+            List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
+            //for every relation
+            for(List<String> checkTags:orderLists){
+                int tableCount = 0;
+                //for every table
+                for(List<Vector> table: myTables){
+                    tableCount++;
+                    //the first row of each table, contains the tags this table
+                    Vector tags_vector = table.get(0);
+                    //if the table contains tags/relations need to be fulfilled
+                    if(tags_vector.containsAll(checkTags)){
+                        List<Integer> columnNos = new ArrayList<>();
+                        for(String tag:checkTags){
+                            int table_column = getColumn(tags_vector,tag);
+                            //if this table is pc_table[p_v,c_id,c_v]
+                            if(tableCount<=PCCount){
+                                //if table_column=1 -> c_id, which actually refers to c_v. plus 1 -> c_v
+                                if(table_column == 1){
+                                    table_column++;
+                                }
+                            }
+                            //else it is a rdb_table[tag1_v, tag2_v, ...], nothing needs to be done with column number.
+                            //add table columns' number to list
+                            columnNos.add(table_column);
+                        }
+
+                        //sort table according to corresponding table column one by one
+                        Collections.sort(table,new Comparator<Vector>(){
+                            public int compare(Vector l1, Vector l2){
+                                int length = l1.size();
+                                int result = 0;
+                                for(int i=0; i<length; i++){
+                                    int compa = (l1.get(i).toString()).compareTo(l2.get(i).toString());
+                                    if(compa < 0){
+                                        result = -1;
+                                        break;
+                                    }
+                                    else if(compa == 0)
+                                        result = 0;
+                                    else {result = 1;break;}
+                                }
+                                return result;
+                            }}
+                        );
+                        //if it is first table which has nothing to join(result list is null), add to result list
+
+                        //else join current tag with result list tags
+
+
+                    }
+                }
+            }
+
+        }
+    }
+
+    //read RDB value and merge list to myTables.
+    public void readRDB() throws Exception{
+        File directory = new File("xjoin/src/multi_rbds");
+        for(File f: directory.listFiles()){
+            String line = "";
+            List<Vector> rdb = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                while ((line = br.readLine()) != null) {
+                    Vector vec = new Vector();
+                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
+                    rdb.add(vec);
+                    }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            myTables.add(rdb);
+        }
     }
 
     static public void main(String[] args) throws Exception {

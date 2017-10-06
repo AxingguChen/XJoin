@@ -26,8 +26,8 @@ public class generateValueIdPair extends DefaultHandler {
     //xml file name
     static String filename;
     //store the name of left tag, right tag so that we only write needed value and ID to local file
-    static ArrayList<List> tagList = new ArrayList<>();
-    static ArrayList<ArrayList<Vector>> pcTables = new ArrayList<>();
+    static List<List> tagList = new ArrayList<>();
+    static List<List<Vector>> pcTables = new ArrayList<>();
     static Vector pv_cId_cv = new Vector(); // [parent_value, child_id, parent_id]
     static int pc_no = -1;
     String ROOT;
@@ -95,9 +95,10 @@ public class generateValueIdPair extends DefaultHandler {
             if(!eleValueStack.empty()){
                 String p_value = (String) eleValueStack.peek();
                 int orderNo = isPC(parent,child);
-                //if current parent and child is p-c relationship in query, add
+                //if current parent and child is p-c relationship in query, add parent value
                 if(orderNo >= 0){
                     pc_no = orderNo;
+                    pv_cId_cv = new Vector();
                     pv_cId_cv.add(p_value);//first: parent_value
                 }
             }
@@ -170,7 +171,7 @@ public class generateValueIdPair extends DefaultHandler {
             pv_cId_cv.add(value);//third: child_value
             pcTables.get(pc_no).add(pv_cId_cv);
             pc_no = -1;
-            pv_cId_cv = new Vector();
+
         }
     }
 
@@ -240,12 +241,12 @@ public class generateValueIdPair extends DefaultHandler {
         System.out.println("End of document Analysis");
     }
 
-    public ArrayList<ArrayList<Vector>> generatePCVId(ArrayList<ArrayList<Vector>> PCTables) throws Exception {
+    public List<List<Vector>> generatePCVId(List<List<Vector>> PCTables) throws Exception {
 
             generateValueIdPair g = new generateValueIdPair();
             //pcTables is going to store the final P-C tables results. PCTables is passed in from tjFast.queryAnalysis_multi
             pcTables = PCTables;
-            for(ArrayList<Vector> pc:PCTables){
+            for(List<Vector> pc:PCTables){
                 //The first row of PCTables stores the [parent_tag, child_tag]
                 //next line is to store all the [parent_tag, child_tag] to tagList
                 tagList.add(pc.get(0));
