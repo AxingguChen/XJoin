@@ -200,6 +200,7 @@ public class queryAnalysis_multi extends DefaultHandler{
                             //add table columns' number to list
                             columnNos.add(table_column);
                         }
+                        List<Vector> table_tagColumns = new ArrayList<>();
 
                         //sort table according to corresponding table column one by one
                         Collections.sort(table,new Comparator<Vector>(){
