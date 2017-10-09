@@ -172,17 +172,51 @@ public class queryAnalysis_multi extends DefaultHandler{
         return -1;
     }
 
+    //compare by column numbers
+    public class MyComparator implements Comparator<Vector> {
+        List<Integer> columnNos;
+        public MyComparator(List<Integer> columnNos) {
+            this.columnNos = columnNos;
+        }
+        @Override
+        public int compare(Vector l1, Vector l2){
+            int result = 0;
+            for(int i=0; i<columnNos.size(); i++){
+                int compa = (l1.get(columnNos.get(i)).toString()).compareTo(l2.get(columnNos.get(i)).toString());
+                if(compa < 0){
+                    result = -1;
+                    break;
+                }
+                else if(compa == 0)
+                    result = 0;
+                else {result = 1;break;}
+            }
+            return result;
+        }
+    }
+
+    public void mergeTable2(List<String> mergeOrder) throws Exception{
+        //merge Order
+        for(int order=0;order<mergeOrder.size();order++){
+            //orderLists--all relations that need to be fulfilled
+            List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
+
+        }
+    }
+
     public void mergeTable(List<String> mergeOrder) throws Exception{
+        //merge order[A,B,C,D,E]
         for(int order=0;order<mergeOrder.size();order++){
             //orderLists--all relations that need to be fulfilled
             List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
             //for every relation
             for(List<String> checkTags:orderLists){
                 int tableCount = 0;
+                List<Vector> mergeTables = new ArrayList<>();
                 //for every table
                 for(List<Vector> table: myTables){
                     tableCount++;
-                    //the first row of each table, contains the tags this table
+                    //the first row of each table, contains the tags of this table
                     Vector tags_vector = table.get(0);
                     //if the table contains tags/relations need to be fulfilled
                     if(tags_vector.containsAll(checkTags)){
@@ -190,43 +224,26 @@ public class queryAnalysis_multi extends DefaultHandler{
                         for(String tag:checkTags){
                             int table_column = getColumn(tags_vector,tag);
                             //if this table is pc_table[p_v,c_id,c_v]
-                            if(tableCount<=PCCount){
+                            if(tableCount<=PCCount && table_column ==1){
                                 //if table_column=1 -> c_id, which actually refers to c_v. plus 1 -> c_v
-                                if(table_column == 1){
-                                    table_column++;
-                                }
+                                table_column++;
                             }
                             //else it is a rdb_table[tag1_v, tag2_v, ...], nothing needs to be done with column number.
-                            //add table columns' number to list
+                            //add table columns' number to list so that we can allocate the corresponding tags in each table
                             columnNos.add(table_column);
                         }
-                        List<Vector> table_tagColumns = new ArrayList<>();
-
                         //sort table according to corresponding table column one by one
-                        Collections.sort(table,new Comparator<Vector>(){
-                            public int compare(Vector l1, Vector l2){
-                                int length = l1.size();
-                                int result = 0;
-                                for(int i=0; i<length; i++){
-                                    int compa = (l1.get(i).toString()).compareTo(l2.get(i).toString());
-                                    if(compa < 0){
-                                        result = -1;
-                                        break;
-                                    }
-                                    else if(compa == 0)
-                                        result = 0;
-                                    else {result = 1;break;}
-                                }
-                                return result;
-                            }}
-                        );
-                        //if it is first table which has nothing to join(result list is null), add to result list
+                        Collections.sort(table,new MyComparator(columnNos));
 
-                        //else join current tag with result list tags
-
-
+                        Vector tableAndColumn = new Vector();
+                        tableAndColumn.add(table);
+                        tableAndColumn.add(columnNos);
+                        mergeTables.add(tableAndColumn);
                     }
                 }
+                //if it is first table which has nothing to join(result list is null), add to result list
+
+                //else join current tag with result list tags
             }
 
         }
