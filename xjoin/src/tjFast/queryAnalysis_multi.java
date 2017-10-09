@@ -241,6 +241,16 @@ public class queryAnalysis_multi extends DefaultHandler{
                         mergeTables.add(tableAndColumn);
                     }
                 }
+
+                //MergeTables: now we have the list of tables and their column numbers which contains the checkTags
+                //Now let us merge these tables
+                if(! mergeTables.isEmpty()){
+                    for(int i=0;i<checkTags.size();i++){
+                        for(Vector v:mergeTables){
+
+                        }
+                    }
+                }
                 //if it is first table which has nothing to join(result list is null), add to result list
 
                 //else join current tag with result list tags
