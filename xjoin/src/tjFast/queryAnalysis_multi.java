@@ -209,10 +209,12 @@ public class queryAnalysis_multi extends DefaultHandler{
         for(int order=0;order<mergeOrder.size();order++){
             //orderLists--all relations that need to be fulfilled
             List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
-            //for every relation
+            //for every relation, eg, [a,b]
             for(List<String> checkTags:orderLists){
                 int tableCount = 0;
-                List<Vector> mergeTables = new ArrayList<>();
+                int pcTable_toBeMergeCount = 0;
+//                List<Vector> mergeTables = new ArrayList<>();
+                Vector tableTags_ToMerge = new Vector();
                 //for every table
                 for(List<Vector> table: myTables){
                     tableCount++;
@@ -220,35 +222,54 @@ public class queryAnalysis_multi extends DefaultHandler{
                     Vector tags_vector = table.get(0);
                     //if the table contains tags/relations need to be fulfilled
                     if(tags_vector.containsAll(checkTags)){
-                        List<Integer> columnNos = new ArrayList<>();
+//                        List<Integer> columnNos = new ArrayList<>();
+                        List<Vector> tableCheckTags = new ArrayList<>();
                         for(String tag:checkTags){
                             int table_column = getColumn(tags_vector,tag);
+
+                            //add table columns to list so that we can allocate the corresponding tags in each table
+                            //columnNos.add(table_column);
+                            tableCheckTags.add(table.get(table_column));
                             //if this table is pc_table[p_v,c_id,c_v]
                             if(tableCount<=PCCount && table_column ==1){
                                 //if table_column=1 -> c_id, which actually refers to c_v. plus 1 -> c_v
                                 table_column++;
+                                //add p_c relation table's id list to checkTags
+                                tableCheckTags.add(table.get(table_column));
                             }
                             //else it is a rdb_table[tag1_v, tag2_v, ...], nothing needs to be done with column number.
-                            //add table columns' number to list so that we can allocate the corresponding tags in each table
-                            columnNos.add(table_column);
                         }
                         //sort table according to corresponding table column one by one
-                        Collections.sort(table,new MyComparator(columnNos));
+//                        Collections.sort(table,new MyComparator(columnNos));
+                        Collections.sort(tableCheckTags,new Comparator<List<Vector>>(){
+                            public int compare(List<Vector> l1, List<Vector> l2){
+                                int length = l1.size();
+                                int result = 0;
+                                for(int i=0; i<length; i++){
+                                    int compa = (l1.get(i).toString()).compareTo(l2.get(i).toString());
+                                    if(compa < 0){
+                                        result = -1;
+                                        break;
+                                    }
+                                    else if(compa == 0)
+                                        result = 0;
+                                    else {result = 1;break;}
+                                }
+                                return result;
+                            }}
+                        );
 
-                        Vector tableAndColumn = new Vector();
-                        tableAndColumn.add(table);
-                        tableAndColumn.add(columnNos);
-                        mergeTables.add(tableAndColumn);
+                        tableTags_ToMerge.add(tableCheckTags);
+//                        tableAndColumn.add(columnNos);
+//                        mergeTables.add(tableAndColumn);
                     }
                 }
 
                 //MergeTables: now we have the list of tables and their column numbers which contains the checkTags
                 //Now let us merge these tables
-                if(! mergeTables.isEmpty()){
+                if(! tableTags_ToMerge.isEmpty()){
                     for(int i=0;i<checkTags.size();i++){
-                        for(Vector v:mergeTables){
 
-                        }
                     }
                 }
                 //if it is first table which has nothing to join(result list is null), add to result list
