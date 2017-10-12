@@ -182,7 +182,8 @@ public class queryAnalysis_multi extends DefaultHandler{
         public int compare(Vector l1, Vector l2){
             int result = 0;
             for(int i=0; i<columnNos.size(); i++){
-                int compa = (l1.get(columnNos.get(i)).toString()).compareTo(l2.get(columnNos.get(i)).toString());
+
+                int compa = (((Vector) l1.get(columnNos.get(i))).get(0).toString()).compareTo(((Vector) l2.get(columnNos.get(i))).get(0).toString());
                 if(compa < 0){
                     result = -1;
                     break;
@@ -195,14 +196,81 @@ public class queryAnalysis_multi extends DefaultHandler{
         }
     }
 
-    public void mergeTable2(List<String> mergeOrder) throws Exception{
-        //merge Order
-        for(int order=0;order<mergeOrder.size();order++){
-            //orderLists--all relations that need to be fulfilled
-            List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
-
-        }
-    }
+//    public void mergeTable2(List<String> mergeOrder) throws Exception{
+//        //merge order[A,B,C,D,E]
+//        for(int order=0;order<mergeOrder.size();order++){
+//            //orderLists--all relations that need to be fulfilled
+//            List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
+//            //for every relation, eg, [a,b]
+//            for(List<String> checkTags:orderLists){
+//                int tableCount = 0;
+//                int pcTable_toBeMergeCount = 0;
+////                List<Vector> mergeTables = new ArrayList<>();
+//                Vector tableTags_ToMerge = new Vector();
+//                //for every table
+//                for(List<Vector> table: myTables){
+//                    tableCount++;
+//                    //the first row of each table, contains the tags of this table
+//                    Vector tags_vector = table.get(0);
+//                    //if the table contains tags/relations need to be fulfilled
+//                    if(tags_vector.containsAll(checkTags)){
+////                        List<Integer> columnNos = new ArrayList<>();
+//                        List<Vector> tableCheckTags = new ArrayList<>();
+//                        for(String tag:checkTags){
+//                            int table_column = getColumn(tags_vector,tag);
+//
+//                            //add table columns to list so that we can allocate the corresponding tags in each table
+//                            //columnNos.add(table_column);
+//                            tableCheckTags.add(table.get(table_column));
+//                            //if this table is pc_table[p_v,c_id,c_v]
+//                            if(tableCount<=PCCount && table_column ==1){
+//                                //if table_column=1 -> c_id, which actually refers to c_v. plus 1 -> c_v
+//                                table_column++;
+//                                //add p_c relation table's id list to checkTags
+//                                tableCheckTags.add(table.get(table_column));
+//                            }
+//                            //else it is a rdb_table[tag1_v, tag2_v, ...], nothing needs to be done with column number.
+//                        }
+//                        //sort table according to corresponding table column one by one
+////                        Collections.sort(table,new MyComparator(columnNos));
+//                        Collections.sort(tableCheckTags,new Comparator<List<Vector>>(){
+//                            public int compare(List<Vector> l1, List<Vector> l2){
+//                                int length = l1.size();
+//                                int result = 0;
+//                                for(int i=0; i<length; i++){
+//                                    int compa = (l1.get(i).get(0).toString()).compareTo(l2.get(i).get(0).toString());
+//                                    if(compa < 0){
+//                                        result = -1;
+//                                        break;
+//                                    }
+//                                    else if(compa == 0)
+//                                        result = 0;
+//                                    else {result = 1;break;}
+//                                }
+//                                return result;
+//                            }}
+//                        );
+//
+//                        tableTags_ToMerge.add(tableCheckTags);
+////                        tableAndColumn.add(columnNos);
+////                        mergeTables.add(tableAndColumn);
+//                    }
+//                }
+//
+//                //MergeTables: now we have the list of tables and their column numbers which contains the checkTags
+//                //Now let us merge these tables
+//                if(! tableTags_ToMerge.isEmpty()){
+//                    for(int i=0;i<checkTags.size();i++){
+//
+//                    }
+//                }
+//                //if it is first table which has nothing to join(result list is null), add to result list
+//
+//                //else join current tag with result list tags
+//            }
+//
+//        }
+//    }
 
     public void mergeTable(List<String> mergeOrder) throws Exception{
         //merge order[A,B,C,D,E]
@@ -212,9 +280,10 @@ public class queryAnalysis_multi extends DefaultHandler{
             //for every relation, eg, [a,b]
             for(List<String> checkTags:orderLists){
                 int tableCount = 0;
-                int pcTable_toBeMergeCount = 0;
 //                List<Vector> mergeTables = new ArrayList<>();
-                Vector tableTags_ToMerge = new Vector();
+//                Vector tableTags_ToMerge = new Vector();
+                List<List<Integer>> tableColumns = new ArrayList<>();
+                List<List<Vector>> tablesToMerge = new ArrayList<>();
                 //for every table
                 for(List<Vector> table: myTables){
                     tableCount++;
@@ -222,62 +291,90 @@ public class queryAnalysis_multi extends DefaultHandler{
                     Vector tags_vector = table.get(0);
                     //if the table contains tags/relations need to be fulfilled
                     if(tags_vector.containsAll(checkTags)){
-//                        List<Integer> columnNos = new ArrayList<>();
-                        List<Vector> tableCheckTags = new ArrayList<>();
+                        List<Integer> columnNos = new ArrayList<>();
+//                        List<Vector> tableCheckTags = new ArrayList<>();
                         for(String tag:checkTags){
                             int table_column = getColumn(tags_vector,tag);
 
                             //add table columns to list so that we can allocate the corresponding tags in each table
-                            //columnNos.add(table_column);
-                            tableCheckTags.add(table.get(table_column));
-                            //if this table is pc_table[p_v,c_id,c_v]
-                            if(tableCount<=PCCount && table_column ==1){
-                                //if table_column=1 -> c_id, which actually refers to c_v. plus 1 -> c_v
-                                table_column++;
-                                //add p_c relation table's id list to checkTags
-                                tableCheckTags.add(table.get(table_column));
-                            }
-                            //else it is a rdb_table[tag1_v, tag2_v, ...], nothing needs to be done with column number.
-                        }
-                        //sort table according to corresponding table column one by one
-//                        Collections.sort(table,new MyComparator(columnNos));
-                        Collections.sort(tableCheckTags,new Comparator<List<Vector>>(){
-                            public int compare(List<Vector> l1, List<Vector> l2){
-                                int length = l1.size();
-                                int result = 0;
-                                for(int i=0; i<length; i++){
-                                    int compa = (l1.get(i).toString()).compareTo(l2.get(i).toString());
-                                    if(compa < 0){
-                                        result = -1;
-                                        break;
-                                    }
-                                    else if(compa == 0)
-                                        result = 0;
-                                    else {result = 1;break;}
-                                }
-                                return result;
-                            }}
-                        );
+                            columnNos.add(table_column);
+//                            tableCheckTags.add(table.get(table_column));
 
-                        tableTags_ToMerge.add(tableCheckTags);
-//                        tableAndColumn.add(columnNos);
-//                        mergeTables.add(tableAndColumn);
+                        }
+                        tableColumns.add(columnNos);
+                        List<Vector> tr = table.subList(1,table.size());
+                        Collections.sort(tr,new MyComparator(columnNos));
+                        tablesToMerge.add(tr);
                     }
                 }
 
                 //MergeTables: now we have the list of tables and their column numbers which contains the checkTags
-                //Now let us merge these tables
-                if(! tableTags_ToMerge.isEmpty()){
-                    for(int i=0;i<checkTags.size();i++){
+                //Now let us merge these
+                //if only one table
 
+                //if at least two
+                if(! tablesToMerge.isEmpty()){
+                    int[] rowCursor = new int[tablesToMerge.size()];
+                    Boolean notEnd = true;
+                    while(notEnd){
+                        List<String> tagValues = new ArrayList<>();
+                        for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
+                            tagValues.add(((Vector)tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(0))).get(0).toString());
+                        }
+                        int compareResult = makeComparision(tagValues);
+                        //if the first value is equal, we need to check if all other values are the same
+                        if(compareResult == -1){
+
+                        }
+                        //add one to the row cursor number of the smallest table, then make comparision
+                        else rowCursor[compareResult] = rowCursor[compareResult];
+
+
+                        //any one of the tables has gone to the end
+                        if(isEnd(tablesToMerge,rowCursor)){
+                            notEnd = false;
+                        }
                     }
                 }
+            }
                 //if it is first table which has nothing to join(result list is null), add to result list
 
                 //else join current tag with result list tags
-            }
-
         }
+
+    }
+
+    //return true means is end.
+    public boolean isEnd(List<List<Vector>> tablesLists, int[] rowCursor){
+        for(int i=0;i<tablesLists.size();i++){
+            // the last element of this table
+            if(tablesLists.get(i).size() == rowCursor[i]+1){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //return table cursor, which need to go to next row.
+    //if the values are all the same, return -1
+    public int makeComparision(List<String> values){
+        String smallValue = values.get(0);
+        int smallValueCursor = 0;
+        Boolean equals = true;
+        for(int i=1;i<values.size();i++){
+            String currentValue = values.get(i);
+            int compare = smallValue.compareTo(currentValue);
+            if(compare > 0){
+                smallValue = values.get(i);
+                smallValueCursor = i;
+            }
+            else if(compare != 0){
+                equals = false;
+            }
+        }
+        if(equals) return -1;
+
+        return smallValueCursor;
     }
 
     //read RDB value and merge list to myTables.
@@ -285,11 +382,23 @@ public class queryAnalysis_multi extends DefaultHandler{
         File directory = new File("xjoin/src/multi_rbds");
         for(File f: directory.listFiles()){
             String line = "";
+            Boolean firstLine = true;
             List<Vector> rdb = new ArrayList<>();
             try (BufferedReader br = new BufferedReader(new FileReader(f))) {
                 while ((line = br.readLine()) != null) {
                     Vector vec = new Vector();
-                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
+                    if(firstLine){
+                        vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));
+                        firstLine = false;
+                    }
+                    else{
+                        String[] values = line.split("\\s*,\\s*");
+    //                    if()
+                        for(String s:values){
+                            vec.add(new Vector<>(Arrays.asList(s)));
+                        }
+                    }
+//                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
                     rdb.add(vec);
                     }
             } catch (IOException e) {
