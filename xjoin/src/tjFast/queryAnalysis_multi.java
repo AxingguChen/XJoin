@@ -273,6 +273,7 @@ public class queryAnalysis_multi extends DefaultHandler{
 //    }
 
     public void mergeTable(List<String> mergeOrder) throws Exception{
+        List<Vector> mergeResult = new ArrayList<>();
         //merge order[A,B,C,D,E]
         for(int order=0;order<mergeOrder.size();order++){
             //orderLists--all relations that need to be fulfilled
@@ -299,7 +300,6 @@ public class queryAnalysis_multi extends DefaultHandler{
                             //add table columns to list so that we can allocate the corresponding tags in each table
                             columnNos.add(table_column);
 //                            tableCheckTags.add(table.get(table_column));
-
                         }
                         tableColumns.add(columnNos);
                         List<Vector> tr = table.subList(1,table.size());
@@ -309,73 +309,92 @@ public class queryAnalysis_multi extends DefaultHandler{
                 }
 
                 //MergeTables: now we have the list of tables and their column numbers which contains the checkTags
-                //Now let us merge these
-                //if only one table
-
-
+                //Now let us merge these tables
+                //if only one table, add this table's column tag to intermediate result
+                if(tablesToMerge.size() == 1){
+                    Vector v = new Vector();
+                    List<Vector> table = tablesToMerge.get(0);
+                    for(int row=0; row<table.size(); row++){
+                        for(int column=0; column<tableColumns.size(); column++){
+                            v.add(table.get(row).get(column*2));
+                            v.add(table.get(row).get(column*2+1));
+                        }
+                        mergeResult.add(v);
+                    }
+                }
 
                 //if at least two
-                if(! tablesToMerge.isEmpty()){
-                    int[] rowCursor = new int[tablesToMerge.size()];
-                    Boolean notEnd = true;
-                    while(notEnd){
-                        List<String> tagValues = new ArrayList<>();
-                        for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
-                            tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(0)*2).toString());
-                        }
-                        int compareResult = makeComparision(tagValues);
-                        //if the first column values equal, need to check if all other values are the same
-                        if(compareResult == -1){
-                            //if only one tag need to be compare, add current row to result list
-                            if(tableColumns.get(0).size() == 1){
-
-
-
+                else if(tablesToMerge.size()>1){
+                    if(! tablesToMerge.isEmpty()){
+                        int[] rowCursor = new int[tablesToMerge.size()];
+                        Boolean notEnd = true;
+                        while(notEnd){
+                            List<String> tagValues = new ArrayList<>();
+                            for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
+                                tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(0)*2).toString());
                             }
-                            //else compare other tags values of current row
-                            else {
-                                //first table's values, use to compare with other tables
-                                List<String> baseValue = new ArrayList<>();
-                                List<Vector> baseTable = tablesToMerge.get(0);
-                                for (int cursor = 1; cursor < tableColumns.get(0).size(); cursor++) {
-                                    //baseTables.get(tableRow).get(tableColumn)
-                                    baseValue.add(baseTable.get(rowCursor[0]).get(tableColumns.get(0).get(cursor)).toString());
-                                }
-                                //for each table
-                                Boolean allEqual = true;
-                                for (int tableCursor = 1; tableCursor < tablesToMerge.size(); tableCursor++) {
-                                    //each tag/column, columnCursor smaller than the first tables column count
-                                    for(int columnCursor = 1; columnCursor < tableColumns.get(tableCursor).size();columnCursor++){
-                                        List<Vector> currentTable = tablesToMerge.get(tableCursor);
-                                        String currentValue = currentTable.get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(columnCursor)).toString();
-                                        //if currentValue is not equal to corresponding base value
-                                        if(currentValue.compareTo(baseValue.get(columnCursor-1)) !=0){
-                                            allEqual = false;
-                                            break;
-                                        }
+                            int compareResult = makeComparision(tagValues);
+                            //if the first column values equal, need to check if all other values are the same
+                            if(compareResult == -1){
+                                //if only one tag need to be compare, add current row to result list
+                                if(tableColumns.get(0).size() == 1){
+                                    Vector v = new Vector();
+                                    //add value
+                                    v.add(tagValues.get(0));
+                                    //add IDs
+                                    List<int[]> ids = new ArrayList<>();
+                                    for(int tCursor=0; tCursor<tablesToMerge.size(); tCursor++){
+                                        int[] id = (int[])tablesToMerge.get(tCursor).get(rowCursor[tCursor]).get(1);
+                                        //add id
+                                        if( id != null && (! ids.contains(id))) ids.add(id);
                                     }
-                                    if(!allEqual) break;
                                 }
-                                //if all values are the same, add this row to intermediate result
-                                if(allEqual) {
+                                //else compare other tags values of current row
+                                else {
+                                    //first table's values, use to compare with other tables
+                                    List<String> baseValue = new ArrayList<>();
+                                    //first table
+                                    List<Vector> baseTable = tablesToMerge.get(0);
+                                    for (int cursor = 1; cursor < tableColumns.get(0).size(); cursor++) {
+                                        //baseTables.get(tableRow).get(tableColumn)
+                                        baseValue.add(baseTable.get(rowCursor[0]).get(tableColumns.get(0).get(cursor)).toString());
+                                    }
+                                    //for each table
+                                    Boolean allEqual = true;
+                                    for (int tableCursor = 1; tableCursor < tablesToMerge.size(); tableCursor++) {
+                                        //each tag/column, columnCursor smaller than the first tables column count
+                                        for(int columnCursor = 1; columnCursor < tableColumns.get(tableCursor).size();columnCursor++){
+                                            List<Vector> currentTable = tablesToMerge.get(tableCursor);
+                                            String currentValue = currentTable.get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(columnCursor)).toString();
+                                            //if currentValue is not equal to corresponding base value
+                                            if(currentValue.compareTo(baseValue.get(columnCursor-1)) !=0){
+                                                allEqual = false;
+                                                break;
+                                            }
+                                        }
+                                        if(!allEqual) break;
+                                    }
+                                    //if all values are the same, add this row to intermediate result. Several tags
+                                    if(allEqual) {
 
 
 
-                                }
-                                else{
-                                    //Maybe miss correct result here, Need to modify later, cannot simply move the first table's row count
-//                                            @@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!!!!!!
-                                    rowCursor[0] = rowCursor[0] +1;
+                                    }
+                                    else{
+                                        //Maybe miss correct result here, Need to modify later, cannot simply move the first table's row count
+    //                                            @@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!!!!!!
+                                        rowCursor[0] = rowCursor[0] +1;
+                                    }
                                 }
                             }
-                        }
-                        //add one to the row cursor number of the smallest table, then make comparision
-                        else rowCursor[compareResult] = rowCursor[compareResult]+1;
+                            //add one to the row cursor number of the smallest table, then make comparision
+                            else rowCursor[compareResult] = rowCursor[compareResult]+1;
 
 
-                        //any one of the tables has gone to the end
-                        if(isEnd(tablesToMerge,rowCursor)){
-                            notEnd = false;
+                            //any one of the tables has gone to the end
+                            if(isEnd(tablesToMerge,rowCursor)){
+                                notEnd = false;
+                            }
                         }
                     }
                 }
