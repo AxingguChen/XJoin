@@ -374,7 +374,7 @@ public class queryAnalysis_multi extends DefaultHandler{
                                         }
                                         if(!allEqual) break;
                                     }
-                                    //if all values are the same, add this row to intermediate result. Several tags
+                                    //if all values are the same, add this row to intermediate result. Several tags(value[can get from baseValue], id)
                                     if(allEqual) {
 
 
