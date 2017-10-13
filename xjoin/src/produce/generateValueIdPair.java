@@ -29,7 +29,7 @@ public class generateValueIdPair extends DefaultHandler {
     static List<List> tagList = new ArrayList<>();
     static List<List<Vector>> pcTables = new ArrayList<>();
     static Vector pvId_cvId = new Vector(); // [parent_value_id, child_value_id]
-    static Vector pvId = new Vector(); // [parent_value, parent_id]
+//    static Vector pvId = new Vector(); // [parent_value, parent_id]
     static Vector c_id = new Vector(); // child_id
     static int pc_no = -1;
     String ROOT;
@@ -101,9 +101,9 @@ public class generateValueIdPair extends DefaultHandler {
                 if(orderNo >= 0){
                     pc_no = orderNo;
                     pvId_cvId = new Vector();
-                    pvId = new Vector();
+//                    pvId = new Vector();
                     c_id = new Vector();
-                    pvId.add(p_value);//first: parent_value
+                    pvId_cvId.add(p_value);//first: parent_value
 //                    pvId_cvId.add(p_value);//first: parent_value
                 }
             }
@@ -173,7 +173,7 @@ public class generateValueIdPair extends DefaultHandler {
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
         if (pc_no>=0) {
-            pvId_cvId.add(new Vector<>(Arrays.asList(value,c_id.get(0))));// third & fourth: child_value, child_id
+            pvId_cvId.addAll(Arrays.asList(value,c_id.get(0)));// third & fourth: child_value, child_id
             pcTables.get(pc_no).add(pvId_cvId);
             pc_no = -1;
 
@@ -188,8 +188,8 @@ public class generateValueIdPair extends DefaultHandler {
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
         if (pc_no>=0) {
 //            pvId_cvId.add(labels);//second: child_id
-            pvId.add(Arrays.copyOf(labels, labels.length-1));//second: parent_id
-            pvId_cvId.add(pvId);
+            pvId_cvId.add(Arrays.copyOf(labels, labels.length-1));//second: parent_id
+//            pvId_cvId.add(pvId);
             c_id.add(labels);//child_id
 
             validEleNum ++;

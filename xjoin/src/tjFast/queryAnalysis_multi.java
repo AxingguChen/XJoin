@@ -183,7 +183,7 @@ public class queryAnalysis_multi extends DefaultHandler{
             int result = 0;
             for(int i=0; i<columnNos.size(); i++){
 
-                int compa = (((Vector) l1.get(columnNos.get(i))).get(0).toString()).compareTo(((Vector) l2.get(columnNos.get(i))).get(0).toString());
+                int compa = (l1.get(columnNos.get(i*2)).toString()).compareTo(l2.get(columnNos.get(i*2)).toString());
                 if(compa < 0){
                     result = -1;
                     break;
@@ -312,6 +312,8 @@ public class queryAnalysis_multi extends DefaultHandler{
                 //Now let us merge these
                 //if only one table
 
+
+
                 //if at least two
                 if(! tablesToMerge.isEmpty()){
                     int[] rowCursor = new int[tablesToMerge.size()];
@@ -319,15 +321,56 @@ public class queryAnalysis_multi extends DefaultHandler{
                     while(notEnd){
                         List<String> tagValues = new ArrayList<>();
                         for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
-                            tagValues.add(((Vector)tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(0))).get(0).toString());
+                            tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(0)*2).toString());
                         }
                         int compareResult = makeComparision(tagValues);
-                        //if the first value is equal, we need to check if all other values are the same
+                        //if the first column values equal, need to check if all other values are the same
                         if(compareResult == -1){
+                            //if only one tag need to be compare, add current row to result list
+                            if(tableColumns.get(0).size() == 1){
 
+
+
+                            }
+                            //else compare other tags values of current row
+                            else {
+                                //first table's values, use to compare with other tables
+                                List<String> baseValue = new ArrayList<>();
+                                List<Vector> baseTable = tablesToMerge.get(0);
+                                for (int cursor = 1; cursor < tableColumns.get(0).size(); cursor++) {
+                                    //baseTables.get(tableRow).get(tableColumn)
+                                    baseValue.add(baseTable.get(rowCursor[0]).get(tableColumns.get(0).get(cursor)).toString());
+                                }
+                                //for each table
+                                Boolean allEqual = true;
+                                for (int tableCursor = 1; tableCursor < tablesToMerge.size(); tableCursor++) {
+                                    //each tag/column, columnCursor smaller than the first tables column count
+                                    for(int columnCursor = 1; columnCursor < tableColumns.get(tableCursor).size();columnCursor++){
+                                        List<Vector> currentTable = tablesToMerge.get(tableCursor);
+                                        String currentValue = currentTable.get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor).get(columnCursor)).toString();
+                                        //if currentValue is not equal to corresponding base value
+                                        if(currentValue.compareTo(baseValue.get(columnCursor-1)) !=0){
+                                            allEqual = false;
+                                            break;
+                                        }
+                                    }
+                                    if(!allEqual) break;
+                                }
+                                //if all values are the same, add this row to intermediate result
+                                if(allEqual) {
+
+
+
+                                }
+                                else{
+                                    //Maybe miss correct result here, Need to modify later, cannot simply move the first table's row count
+//                                            @@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!!!!!!
+                                    rowCursor[0] = rowCursor[0] +1;
+                                }
+                            }
                         }
                         //add one to the row cursor number of the smallest table, then make comparision
-                        else rowCursor[compareResult] = rowCursor[compareResult];
+                        else rowCursor[compareResult] = rowCursor[compareResult]+1;
 
 
                         //any one of the tables has gone to the end
@@ -355,6 +398,14 @@ public class queryAnalysis_multi extends DefaultHandler{
         return false;
     }
 
+    public boolean isEqual(List<List<Vector>> tablesToMerge, int[] rowCursor){
+//        List<String> baseValue =
+        for(int tableNo=0; tableNo<tablesToMerge.size();tableNo++){
+
+        }
+        return true;
+    }
+
     //return table cursor, which need to go to next row.
     //if the values are all the same, return -1
     public int makeComparision(List<String> values){
@@ -368,7 +419,7 @@ public class queryAnalysis_multi extends DefaultHandler{
                 smallValue = values.get(i);
                 smallValueCursor = i;
             }
-            else if(compare != 0){
+            if(compare != 0){
                 equals = false;
             }
         }
@@ -395,7 +446,8 @@ public class queryAnalysis_multi extends DefaultHandler{
                         String[] values = line.split("\\s*,\\s*");
     //                    if()
                         for(String s:values){
-                            vec.add(new Vector<>(Arrays.asList(s)));
+                            vec.add(s);
+                            vec.add(null);
                         }
                     }
 //                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
