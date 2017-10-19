@@ -183,7 +183,7 @@ public class queryAnalysis_multi extends DefaultHandler{
             int result = 0;
             for(int i=0; i<columnNos.size(); i++){
 
-                int compa = (l1.get(columnNos.get(i*2)).toString()).compareTo(l2.get(columnNos.get(i*2)).toString());
+                int compa = (l1.get(columnNos.get(i)*2).toString()).compareTo(l2.get(columnNos.get(i)*2).toString());
                 if(compa < 0){
                     result = -1;
                     break;
@@ -273,13 +273,16 @@ public class queryAnalysis_multi extends DefaultHandler{
 //    }
 
     public void mergeTable(List<String> mergeOrder) throws Exception{
-        List<Vector> mergeResult = new ArrayList<>();
+        List<List<Vector>> finalResult = new ArrayList<>();
         //merge order[A,B,C,D,E]
         for(int order=0;order<mergeOrder.size();order++){
+
             //orderLists--all relations that need to be fulfilled
             List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
             //for every relation, eg, [a,b]
             for(List<String> checkTags:orderLists){
+                //mergeResult: [a, a_id, b, b_id,...]
+                List<Vector> mergeResult = new ArrayList<>();
                 int tableCount = 0;
 //                List<Vector> mergeTables = new ArrayList<>();
 //                Vector tableTags_ToMerge = new Vector();
@@ -303,6 +306,10 @@ public class queryAnalysis_multi extends DefaultHandler{
                         }
                         tableColumns.add(columnNos);
                         List<Vector> tr = table.subList(1,table.size());
+                        //remove duplicate
+//                        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@??????????????
+
+
                         Collections.sort(tr,new MyComparator(columnNos));
                         tablesToMerge.add(tr);
                     }
@@ -312,12 +319,16 @@ public class queryAnalysis_multi extends DefaultHandler{
                 //Now let us merge these tables
                 //if only one table, add this table's column tag to intermediate result
                 if(tablesToMerge.size() == 1){
-                    Vector v = new Vector();
+
                     List<Vector> table = tablesToMerge.get(0);
+                    List<Integer> tableColumn = tableColumns.get(0);
+                    //add tag name to the first row of merge Result
+                    mergeResult.add(new Vector<>(checkTags));
                     for(int row=0; row<table.size(); row++){
-                        for(int column=0; column<tableColumns.size(); column++){
-                            v.add(table.get(row).get(column*2));
-                            v.add(table.get(row).get(column*2+1));
+                        Vector v = new Vector();
+                        for(int column=0; column<tableColumn.size(); column++){
+                            v.add(table.get(row).get(tableColumn.get(column)*2));
+                            v.add(table.get(row).get(tableColumn.get(column)*2+1));
                         }
                         mergeResult.add(v);
                     }
@@ -325,6 +336,9 @@ public class queryAnalysis_multi extends DefaultHandler{
 
                 //if at least two
                 else if(tablesToMerge.size()>1){
+                    //add tag name to the first row of merge Result
+                    mergeResult.add(new Vector<>(checkTags));
+
                     if(! tablesToMerge.isEmpty()){
                         int[] rowCursor = new int[tablesToMerge.size()];
                         Boolean notEnd = true;
@@ -344,10 +358,22 @@ public class queryAnalysis_multi extends DefaultHandler{
                                     //add IDs
                                     List<int[]> ids = new ArrayList<>();
                                     for(int tCursor=0; tCursor<tablesToMerge.size(); tCursor++){
-                                        int[] id = (int[])tablesToMerge.get(tCursor).get(rowCursor[tCursor]).get(1);
+//                                        int[] id = (int[])tablesToMerge.get(tCursor).get(rowCursor[tCursor]).get(1);
+                                        int[] id = (int[])tablesToMerge.get(tCursor).get(rowCursor[tCursor]).get(tableColumns.get(tCursor).get(0)*2+1);
                                         //add id
                                         if( id != null && (! ids.contains(id))) ids.add(id);
                                     }
+                                    //add the value and id list to result list
+                                    Vector row = new Vector();
+                                    row.add(tagValues.get(0));//add value
+                                    row.add(ids);//add value's id list
+                                    mergeResult.add(row);
+                                    //move to the next row to compare
+                                    if(isEnd(tablesToMerge,rowCursor)){
+                                        break;
+                                    }
+                                    else rowCursor = nextMove(tablesToMerge, rowCursor,tableColumns);
+
                                 }
                                 //else compare other tags values of current row
                                 else {
@@ -375,37 +401,74 @@ public class queryAnalysis_multi extends DefaultHandler{
                                         if(!allEqual) break;
                                     }
                                     //if all values are the same, add this row to intermediate result. Several tags(value[can get from baseValue], id)
+                                    //Since baseValue is used to compare if
                                     if(allEqual) {
-
-
-
+                                        Vector v = new Vector();
+                                        for(int i=0; i< baseValue.size(); i++){
+                                            v.add(baseValue.get(i)); //i-th value in baseValue
+//                                            v.add();//i-th id
+                                            List<int[]> ids = new ArrayList<>();
+                                            for(int tCursor=0; tCursor<tablesToMerge.size(); tCursor++){
+                                                int[] id = (int[])tablesToMerge.get(tCursor).get(rowCursor[tCursor]).get(1);
+                                                //add id
+                                                if( id != null && (! ids.contains(id))) ids.add(id);
+                                            }
+                                            v.add(ids);
+                                        }
+                                        mergeResult.add(v);
+//                                        next move
                                     }
-                                    else{
-                                        //Maybe miss correct result here, Need to modify later, cannot simply move the first table's row count
-    //                                            @@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!!!!!!
-                                        rowCursor[0] = rowCursor[0] +1;
+//                                    else{
+//                                        //Maybe miss correct result here, Need to modify later, cannot simply move the first table's row count
+//    //                                            @@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!!!!!!
+//                                        rowCursor[0] = rowCursor[0] +1;
+//                                    }
+                                    //move to the next row to compare
+                                    if(isEnd(tablesToMerge,rowCursor)){
+                                        break;
                                     }
+                                    else rowCursor = nextMove(tablesToMerge, rowCursor,tableColumns);
                                 }
                             }
                             //add one to the row cursor number of the smallest table, then make comparision
-                            else rowCursor[compareResult] = rowCursor[compareResult]+1;
-
-
-                            //any one of the tables has gone to the end
-                            if(isEnd(tablesToMerge,rowCursor)){
-                                notEnd = false;
+                            else{
+                                rowCursor[compareResult] = rowCursor[compareResult]+1;
+                                //any one of the tables has gone to the end
+                                if(isEnd(tablesToMerge,rowCursor)){
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+                finalResult.add(mergeResult);
+                //join with final final result
             }
                 //if it is first table which has nothing to join(result list is null), add to result list
-
+            System.out.println("first done");
                 //else join current tag with result list tags
+
         }
 
     }
 
+    public int[] nextMove(List<List<Vector>> tablesToMerge, int[] rowCursor, List<List<Integer>> tableColumns){
+        //1. read next row's value. 2. compare the values and get the min next value. 3. move min value row's cursor
+        List<String> tempValues = new ArrayList<>();
+        for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
+            tempValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]+1).get(tableColumns.get(tableCursor).get(0)*2).toString());
+        }
+        int tempCompareResult = makeComparision(tempValues);
+        if(tempCompareResult == -1){
+            for(int i=0;i<rowCursor.length;i++){
+                rowCursor[i]++;
+            }
+
+        }else{
+            rowCursor[tempCompareResult] = rowCursor[tempCompareResult]+1;
+        }
+        return rowCursor;
+    }
     //return true means is end.
     public boolean isEnd(List<List<Vector>> tablesLists, int[] rowCursor){
         for(int i=0;i<tablesLists.size();i++){
