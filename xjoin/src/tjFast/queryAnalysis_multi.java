@@ -140,7 +140,7 @@ public class queryAnalysis_multi extends DefaultHandler{
         readRDB();
         System.out.println(myTables);
         //Merge all tables by given merge order
-        mergeTable(Arrays.asList("a","b","c","d","e"));
+        mergeTableV2(Arrays.asList("a","b","c","d","e"));
 
     }
 
@@ -174,16 +174,16 @@ public class queryAnalysis_multi extends DefaultHandler{
 
     //compare by column numbers
     public class MyComparator implements Comparator<Vector> {
-        List<Integer> columnNos;
-        public MyComparator(List<Integer> columnNos) {
+        Vector columnNos;
+        public MyComparator(Vector columnNos) {
             this.columnNos = columnNos;
         }
         @Override
         public int compare(Vector l1, Vector l2){
             int result = 0;
-            for(int i=0; i<columnNos.size(); i++){
+            for(int i=0; i<columnNos.size()/2; i++){
 
-                int compa = (l1.get(columnNos.get(i)*2).toString()).compareTo(l2.get(columnNos.get(i)*2).toString());
+                int compa = (l1.get((int)columnNos.get(i*2+1)).toString()).compareTo(l2.get((int)columnNos.get(i*2+1)).toString());
                 if(compa < 0){
                     result = -1;
                     break;
@@ -272,6 +272,94 @@ public class queryAnalysis_multi extends DefaultHandler{
 //        }
 //    }
 
+
+    public void mergeTableV2(List<String> mergeOrder) throws Exception{
+        solutionNode<Vector> rootNode = new solutionNode<Vector>(new Vector(Arrays.asList("Root")));
+        Vector v = new Vector();
+        v.add("child");
+        solutionNode<Vector> childNode1 = new solutionNode<Vector>(v, rootNode);
+        List<Vector> myResult = new ArrayList<>();
+        for(int order=0; order<mergeOrder.size(); order++){
+            String myTag = mergeOrder.get(order);
+            List<List<Vector>> tablesToMerge = new ArrayList<>();
+            List<Vector> tableColumns = new ArrayList<>();
+            //add tables that contains current add-tag to a list(tablesToMerge)
+            for(List<Vector> table:myTables){
+                Vector tagVector = table.get(0);
+                Vector columnNos = new Vector();
+                if(tagVector.contains(myTag)){
+                    for(int i=0; i<=order; i++){
+                        String tag = mergeOrder.get(order);
+                        if(tagVector.contains(tag)){
+                            columnNos.add(tag);
+                            int table_column = getColumn(tagVector,tag);
+                            columnNos.add(table_column*2);
+                        }
+                    }
+                    //add table columns to list so that we can allocate the corresponding tags in each table
+                    tableColumns.add(columnNos);
+                    //remove first row of table
+                    List<Vector> table_removeFirstRow = table.subList(1,table.size());
+                    Collections.sort(table_removeFirstRow,new MyComparator(columnNos));
+                    tablesToMerge.add(table_removeFirstRow);
+                }
+            }
+            //if mergeTable column.size != 0, then following
+            int[] rowCursor = new int[tablesToMerge.size()];
+            //tablesToMerge to add new tag to result
+            if(order==0){
+                Boolean notEnd = true;
+                while(notEnd){
+                    List<String> tagValues = new ArrayList<>();
+                    for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
+                        tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get((int) tableColumns.get(tableCursor).get(1)).toString());
+                    }
+                    int compareResult = makeComparision(tagValues);
+                    //if the first column values equal, need to check if all other values are the same
+                    if(compareResult == -1){
+                        String commonValue = tagValues.get(0);
+                        List<int[]> idList = new ArrayList<>();
+                        //take the same value from following rows
+                        //move cursor
+                        for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
+                            List<Vector> table=tablesToMerge.get(tableCursor);
+                            for(int row=rowCursor[tableCursor]; row<table.size(); row++){
+                                String value=table.get(row).get((int) tableColumns.get(tableCursor).get(1)).toString();
+                                if(! value.equals(commonValue)) {
+                                    rowCursor[tableCursor] = row+1;
+                                    break;
+                                }
+                                int[] id= (int[])table.get(row).get((int) tableColumns.get(tableCursor).get(1)+1);
+                                //here id may have duplicate values@@@@@@@@@@@@
+                                if(id !=null){
+                                    idList.add(id);
+                                }
+                            }
+                        }
+                        //add a to result list
+                        Vector result=new Vector();
+                        result.add(commonValue);
+                        result.add(idList);
+                        myResult.add(result);
+                    }
+
+                    //add one to the row cursor number of the smallest table, then make comparision
+                    else{
+                        rowCursor[compareResult] = rowCursor[compareResult]+1;
+                        //any one of the tables has gone to the end
+                    }
+                    if(isEnd(tablesToMerge,rowCursor)){
+                        break;
+                    }
+                }
+            }
+            //else we need to compare other values
+            else{
+
+            }
+        }
+    }
+
     public void mergeTable(List<String> mergeOrder) throws Exception{
         List<List<Vector>> finalResult = new ArrayList<>();
         //merge order[A,B,C,D,E]
@@ -310,7 +398,7 @@ public class queryAnalysis_multi extends DefaultHandler{
 //                        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@??????????????
 
 
-                        Collections.sort(tr,new MyComparator(columnNos));
+//                        Collections.sort(tr,new MyComparator(columnNos));
                         tablesToMerge.add(tr);
                     }
                 }
