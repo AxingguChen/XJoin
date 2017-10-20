@@ -310,6 +310,10 @@ public class queryAnalysis_multi extends DefaultHandler{
             if(order==0){
                 Boolean notEnd = true;
                 while(notEnd){
+                    //any one of the tables has gone to the end
+                    if(isEnd(tablesToMerge,rowCursor)){
+                        break;
+                    }
                     List<String> tagValues = new ArrayList<>();
                     for(int tableCursor = 0; tableCursor < tablesToMerge.size(); tableCursor++){
                         tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get((int) tableColumns.get(tableCursor).get(1)).toString());
@@ -326,9 +330,12 @@ public class queryAnalysis_multi extends DefaultHandler{
                             for(int row=rowCursor[tableCursor]; row<table.size(); row++){
                                 String value=table.get(row).get((int) tableColumns.get(tableCursor).get(1)).toString();
                                 if(! value.equals(commonValue)) {
-                                    rowCursor[tableCursor] = row+1;
                                     break;
                                 }
+                                else{
+                                    rowCursor[tableCursor]++;
+                                }
+
                                 int[] id= (int[])table.get(row).get((int) tableColumns.get(tableCursor).get(1)+1);
                                 //here id may have duplicate values@@@@@@@@@@@@
                                 if(id !=null){
@@ -341,25 +348,37 @@ public class queryAnalysis_multi extends DefaultHandler{
                         result.add(commonValue);
                         result.add(idList);
                         myResult.add(result);
+
                     }
 
                     //add one to the row cursor number of the smallest table, then make comparision
                     else{
                         rowCursor[compareResult] = rowCursor[compareResult]+1;
-                        //any one of the tables has gone to the end
                     }
-                    if(isEnd(tablesToMerge,rowCursor)){
-                        break;
-                    }
+
                 }
             }
             //else we need to compare other values
             else{
+                for(int row=0; row<myResult.size();){
+                    for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
+
+                    }
+                }
 
             }
         }
     }
-
+    //return true means is end.
+    public boolean isEnd(List<List<Vector>> tablesLists, int[] rowCursor){
+        for(int i=0;i<tablesLists.size();i++){
+            // the last element of this table
+            if(tablesLists.get(i).size() == rowCursor[i]){
+                return true;
+            }
+        }
+        return false;
+    }
     public void mergeTable(List<String> mergeOrder) throws Exception{
         List<List<Vector>> finalResult = new ArrayList<>();
         //merge order[A,B,C,D,E]
@@ -557,16 +576,7 @@ public class queryAnalysis_multi extends DefaultHandler{
         }
         return rowCursor;
     }
-    //return true means is end.
-    public boolean isEnd(List<List<Vector>> tablesLists, int[] rowCursor){
-        for(int i=0;i<tablesLists.size();i++){
-            // the last element of this table
-            if(tablesLists.get(i).size() == rowCursor[i]+1){
-                return true;
-            }
-        }
-        return false;
-    }
+
 
     public boolean isEqual(List<List<Vector>> tablesToMerge, int[] rowCursor){
 //        List<String> baseValue =
