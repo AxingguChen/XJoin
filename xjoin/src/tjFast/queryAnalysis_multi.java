@@ -383,9 +383,10 @@ public class queryAnalysis_multi extends DefaultHandler{
         List<List<Vector>> finalResult = new ArrayList<>();
         //merge order[A,B,C,D,E]
         for(int order=0;order<mergeOrder.size();order++){
-
+            List<List<Vector>> orderResult = new ArrayList<>();
+            List<String> currentOrder = mergeOrder.subList(0,order);
             //orderLists--all relations that need to be fulfilled
-            List<List<String>> orderLists =findAllCombination(mergeOrder.subList(0,order),mergeOrder.get(order));
+            List<List<String>> orderLists =findAllCombination(currentOrder,mergeOrder.get(order));
             //for every relation, eg, [a,b]
             for(List<String> checkTags:orderLists){
                 //mergeResult: [a, a_id, b, b_id,...]
@@ -548,9 +549,22 @@ public class queryAnalysis_multi extends DefaultHandler{
                         }
                     }
                 }
-                finalResult.add(mergeResult);
+                orderResult.add(mergeResult);
                 //join with final final result
             }
+
+            //Merge with current final result
+            //If it is the first tag
+            if(order==0){
+                finalResult = orderResult;
+            }
+            else{
+                for(int i=0; i<orderResult.size(); i++){
+
+                }
+
+            }
+
                 //if it is first table which has nothing to join(result list is null), add to result list
             System.out.println("first done");
                 //else join current tag with result list tags
