@@ -1,10 +1,10 @@
 package produce;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+//import org.apache.poi.ss.usermodel.Cell;
+//import org.apache.poi.ss.usermodel.CellType;
+//import org.apache.poi.ss.usermodel.Row;
+//import org.apache.poi.ss.usermodel.Sheet;
+//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import tjFast.*;
 
 import java.io.*;
@@ -126,63 +126,63 @@ public class labelMatching {
     }
 
 
-    public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
-        List<Match> result = new ArrayList<>();
-        IdentityHashMap<String,String> tableMap = new IdentityHashMap<>(); // save matched value pair
-        File file = new File("xjoin/src/table.xlsx");
-        Integer twigL_n=null; //The position of left tag and right tag in RDB table
-        Integer twigR_n=null;
-        FileInputStream fIP = new FileInputStream(file);//read excel file
-        XSSFWorkbook workbook = new XSSFWorkbook(fIP);
-        Sheet sheet = workbook.getSheetAt(0);
-        //Find specified columns by comparing column names in first row
-        Row first_row = sheet.getRow(0);
-        for (int cn=first_row.getFirstCellNum(); cn<first_row.getLastCellNum(); cn++) {
-            Cell c = first_row.getCell(cn);
-            if(c.toString().equals(twigL)){
-                twigL_n = cn;
-            }
-            if(c.toString().equals(twigR)){
-                twigR_n = cn;
-            }
-        }
-        // if left child and right child of twig exists in RDB table
-        if(twigL_n != null && twigR_n != null){
-            //Compare values
-            for (Row row:sheet){
-                int i = row.getRowNum();
-                // if cell is numerical value, start from second row(first row is name of tags)
-                if(i != 0){
-                    Cell cellL = row.getCell(twigL_n);
-                    Cell cellR = row.getCell(twigR_n);
-                    String left = null;
-                    String right = null;
-                    // check value type since different type value need to be read by different method
-                    //left
-                    if(cellL.getCellTypeEnum()== CellType.NUMERIC){
-                        left = String.valueOf((int)cellL.getNumericCellValue());
-                    }
-                    else if(cellL.getCellTypeEnum()== CellType.STRING){
-                        left = cellL.getStringCellValue();
-                    }
-                    //right
-                    if(cellR.getCellTypeEnum()== CellType.NUMERIC){
-                        right = String.valueOf((int)cellR.getNumericCellValue());
-                    }
-                    else if(cellR.getCellTypeEnum()== CellType.STRING){
-                        right = cellR.getStringCellValue();
-                    }
-
-                    //Add table value to map
-                    result.add(new Match(left,right,null,null));
-
-                }
-                //tableMap.put(cellL.getStringCellValue(),cellR.getStringCellValue());
-            }
-        }
-        else {System.out.println("The twig have not been found in RDB table.");}
-        return  result;
-    }
+//    public List<Match> readRDBValue(String twigL, String twigR) throws Exception{
+//        List<Match> result = new ArrayList<>();
+//        IdentityHashMap<String,String> tableMap = new IdentityHashMap<>(); // save matched value pair
+//        File file = new File("xjoin/src/table.xlsx");
+//        Integer twigL_n=null; //The position of left tag and right tag in RDB table
+//        Integer twigR_n=null;
+//        FileInputStream fIP = new FileInputStream(file);//read excel file
+//        XSSFWorkbook workbook = new XSSFWorkbook(fIP);
+//        Sheet sheet = workbook.getSheetAt(0);
+//        //Find specified columns by comparing column names in first row
+//        Row first_row = sheet.getRow(0);
+//        for (int cn=first_row.getFirstCellNum(); cn<first_row.getLastCellNum(); cn++) {
+//            Cell c = first_row.getCell(cn);
+//            if(c.toString().equals(twigL)){
+//                twigL_n = cn;
+//            }
+//            if(c.toString().equals(twigR)){
+//                twigR_n = cn;
+//            }
+//        }
+//        // if left child and right child of twig exists in RDB table
+//        if(twigL_n != null && twigR_n != null){
+//            //Compare values
+//            for (Row row:sheet){
+//                int i = row.getRowNum();
+//                // if cell is numerical value, start from second row(first row is name of tags)
+//                if(i != 0){
+//                    Cell cellL = row.getCell(twigL_n);
+//                    Cell cellR = row.getCell(twigR_n);
+//                    String left = null;
+//                    String right = null;
+//                    // check value type since different type value need to be read by different method
+//                    //left
+//                    if(cellL.getCellTypeEnum()== CellType.NUMERIC){
+//                        left = String.valueOf((int)cellL.getNumericCellValue());
+//                    }
+//                    else if(cellL.getCellTypeEnum()== CellType.STRING){
+//                        left = cellL.getStringCellValue();
+//                    }
+//                    //right
+//                    if(cellR.getCellTypeEnum()== CellType.NUMERIC){
+//                        right = String.valueOf((int)cellR.getNumericCellValue());
+//                    }
+//                    else if(cellR.getCellTypeEnum()== CellType.STRING){
+//                        right = cellR.getStringCellValue();
+//                    }
+//
+//                    //Add table value to map
+//                    result.add(new Match(left,right,null,null));
+//
+//                }
+//                //tableMap.put(cellL.getStringCellValue(),cellR.getStringCellValue());
+//            }
+//        }
+//        else {System.out.println("The twig have not been found in RDB table.");}
+//        return  result;
+//    }
 
      public List<Match> buildRDBValue(String twigL, String twigR) throws  Exception{
      List<Match> result = new ArrayList<>();
