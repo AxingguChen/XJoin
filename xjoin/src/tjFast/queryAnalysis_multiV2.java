@@ -23,9 +23,11 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     static List<Vector> tjFastTable = new ArrayList<>();
     static Set<String> xmlRelationTagSet = new HashSet<>();
 
-    public void getSolution() throws Exception{
+    public void getSolution(){
         try{
-            List<String> tagList = Arrays.asList("a","b","c","d","e");
+            long beginTime = System.currentTimeMillis();
+//            List<String> tagList = Arrays.asList("a","b","c","d","e");
+            List<String> tagList = Arrays.asList("Invoice","OrderId","Orderline","asin","price");
             for(String s:tagList){
                 if(! xmlRelationTagSet.contains(s)){
                     Vector v = new Vector();
@@ -35,30 +37,38 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     myTables.add(l);
                 }
             }
-            System.out.println("getSolution:"+ myTables);
+//            System.out.println("getSolution:"+ myTables);
             generateValueIdPair generate = new generateValueIdPair();
             //divide p-c relation in xml to RDBs.
             myTables = generate.generatePCVId(myTables);
-            System.out.println(myTables);
+            long endTime = System.currentTimeMillis();
+            System.out.println("divide p-c time:"+(endTime-beginTime));
 
+            beginTime = System.currentTimeMillis();
             //read RDB files, add rdb_tables to myTables.
+            System.out.println("read RDB");
             readRDB();
-            System.out.println(myTables);
-            //Merge all tables by given merge order
-    //        List<Vector> myResult = mergeTableV3(Arrays.asList("Invoices","OrderId","Orderline","asin","price"));
+            endTime = System.currentTimeMillis();
+            System.out.println("read rdb time:"+(endTime-beginTime));
+
+            System.out.println("merge tables");
             List<Vector> myResult = mergeTable(tagList);
             tjFastTable =  myResult;
         }
         catch(Exception e)
-        {System.out.println(e);}
+        {
+            e.printStackTrace();
+            System.exit(1); // also you can use System.exit(0);
+        }
 
     }
-    public List<Vector> mergeTable(List<String> mergeOrder) throws Exception{
+    public List<Vector> mergeTable(List<String> mergeOrder){
         List<Vector> myResult = new ArrayList<>();
         //add tag one by one to myResult
         for(int order=0; order<mergeOrder.size(); order++){
             //the tag that is going to be added to Result
             String addTag = mergeOrder.get(order);
+            System.out.println("add tag:"+addTag);
             //column numbers of addTag in tables
             List<Integer> tableColumns = new ArrayList<>();
             //tables that contains addTag
@@ -75,7 +85,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     //remove first row of table since the first row is the names of tags, and table needs to be sorted later.
                     List<Vector> table_removeFirstRow = table.subList(1,table.size());
                     //sort table by addTag
-                    Collections.sort(table_removeFirstRow,new MyComparator(tableColumns));
+                    Collections.sort(table_removeFirstRow,new MyComparator(Arrays.asList(table_column*2)));
                     //add table that contains addTag to list
                     tablesToMerge.add(table_removeFirstRow);
                     //add first row of table(table tag names) to a list, since we need to check tables' other tags later.
@@ -105,7 +115,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                         //if this table contains this tag
                         if(column != -1){
                             //columnNos contains columns of addedTag and addTag
-                            List<Integer> columnNos = Arrays.asList(column,tableColumns.get(tableCursor));
+                            List<Integer> columnNos = Arrays.asList(column*2,tableColumns.get(tableCursor));
                             addedTagColumn.add(columnNos);
                             List<Vector> currentTable = tablesToMerge.get(tableCursor);
                             //sort table by first addedTag, then addTag
@@ -117,14 +127,14 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     //exists table(s) to join with Result table
                     if(!addedTagColumn.isEmpty()){
                         //sort myResult on addedTag
-                        Collections.sort(myResult,new MyComparator(Arrays.asList(addedTagCursor)));
+                        Collections.sort(myResult,new MyComparator(Arrays.asList(addedTagCursor*2)));
                         //join tablesToMergeOnAddedTag with myResult
                         myResult = joinWithResult(myResult, addedTagCursor, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap, order*2);
                     }
                 }
 
                 //if tablesToMerge does not have any common tag with Result list, add each key in tagHashMap to each row of the table
-                if(myResult.get(0).size() == order+1){
+                if(myResult.get(0).size() == order*2){//(1*2 = 2)
                     List<Vector> simulNewResult = new ArrayList<>();
                     for (Map.Entry<String, List<int[]>> entry : tagHashMap.entrySet()) {
                         String value = entry.getKey();
@@ -161,7 +171,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 tagValues.add(tablesToMergeOnAddedTag.get(tableCursor).get(rowCursor[tableCursor+1]).get((int) addedTagColumn.get(tableCursor).get(0)).toString());
             }
             int compareResult = makeComparision(tagValues);
-            //if the first column values equal, add this row to prunedTables one by one
+
             if(compareResult == -1){
                 //compare addTag column value
                 //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
@@ -169,9 +179,13 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 Vector row = (Vector) resultRow;//@@@@if needs to be cloned
                 if(row.size() == orgRowSize){
                     String value = tablesToMergeOnAddedTag.get(0).get(rowCursor[1]).get((int) addedTagColumn.get(0).get(1)).toString();
-                    row.addAll(Arrays.asList(value, tagHashMap.get(value)));
-                    myNewResult.add(row);
+                    if(tagHashMap.containsKey(value)){
+                        row.addAll(Arrays.asList(value, tagHashMap.get(value)));
+                        myNewResult.add(row);
+                    }
                     //@@@@@move row cursor
+                    //@@@@@@@@@here has problem.....because of the move of the row table, you need to jump several values at
+                    //the same time and you need to write a recursion to compare tags one by one
                     rowCursor[0]++;
                 }
                 //else myResult has addTag to join
@@ -365,6 +379,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                System.exit(1);
             }
             myTables.add(rdb);
         }
@@ -546,7 +561,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
 
     // Parser calls this once after parsing a document
     public void endDocument() throws SAXException {
-//        getSolution();
+        getSolution();
         System.out.println("begin analysis query !");
 
         Query.setTwigTagNames(twigTagNames);
@@ -590,6 +605,14 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             //System.out.println("start multi-times tjFast");
             int solutionCount = 0;
 
+            //produce tjFast leaves table
+            List<Vector> tjFastData = new ArrayList<>();
+            for(Vector v:tjFastTable){
+                Vector v1 = new Vector();
+                v1.addAll(Arrays.asList(v.get(1*2), v.get(1*2+1), v.get(3*2), v.get(3*2+1), v.get(4*2), v.get(4*2+1)));
+                tjFastData.add(v1);
+            }
+
 //            for(int i = 0;i<100;i++){
 //                part0.add(o[0].get(i));
 //                part1.add(o[1].get(i));
@@ -597,9 +620,9 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
 //            Vector partO[] = new Vector[2];
 //            partO[0] = part0;
 //            partO[1] = part1;
-            for(int i=0;i<tjFastTable.size();i++) {
+            for(int i=0;i<tjFastData.size();i++) {
                 long loadbeginTime = System.currentTimeMillis();
-                Hashtable[] alldata = d.loadAllLeafData(tjFastTable.get(i), DTDInfor,tagList);
+                Hashtable[] alldata = d.loadAllLeafData(tjFastData.get(i), DTDInfor,tagList);
 
                 //for double layer query only
 //                alldata[0].put(tagList.get(2),partO[0]);
