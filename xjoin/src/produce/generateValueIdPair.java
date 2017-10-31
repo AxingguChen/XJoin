@@ -109,7 +109,11 @@ public class generateValueIdPair extends DefaultHandler {
                 pc_no = orderNo;
                 pvId_cvId = new Vector();
                 c_id = new Vector();
-                if(orderNo < 20) pvId_cvId.add(p_value);//first: parent_value
+                //first: parent_value
+                if(orderNo < 20) {
+                    if(p_value != null) pvId_cvId.add(p_value);
+                    else pvId_cvId.add(1+""); //@@@@@@produce some mock data
+                }
             }
 
             int maxleftSibling = ((Integer) maxSilblingStack.peek()).intValue();
