@@ -24,29 +24,34 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     static Set<String> xmlRelationTagSet = new HashSet<>();
 
     public void getSolution() throws Exception{
-        List<String> tagList = Arrays.asList("a","b","c","d","e");
-        for(String s:tagList){
-            if(! xmlRelationTagSet.contains(s)){
-                Vector v = new Vector();
-                List<Vector> l = new ArrayList<>();
-                v.add(s);
-                l.add(v);
-                myTables.add(l);
+        try{
+            List<String> tagList = Arrays.asList("a","b","c","d","e");
+            for(String s:tagList){
+                if(! xmlRelationTagSet.contains(s)){
+                    Vector v = new Vector();
+                    List<Vector> l = new ArrayList<>();
+                    v.add(s);
+                    l.add(v);
+                    myTables.add(l);
+                }
             }
-        }
-        System.out.println("getSolution:"+ myTables);
-        generateValueIdPair generate = new generateValueIdPair();
-        //divide p-c relation in xml to RDBs.
-        myTables = generate.generatePCVId(myTables);
-        System.out.println(myTables);
+            System.out.println("getSolution:"+ myTables);
+            generateValueIdPair generate = new generateValueIdPair();
+            //divide p-c relation in xml to RDBs.
+            myTables = generate.generatePCVId(myTables);
+            System.out.println(myTables);
 
-        //read RDB files, add rdb_tables to myTables.
-        readRDB();
-        System.out.println(myTables);
-        //Merge all tables by given merge order
-//        List<Vector> myResult = mergeTableV3(Arrays.asList("Invoices","OrderId","Orderline","asin","price"));
-        List<Vector> myResult = mergeTable(tagList);
-        tjFastTable =  myResult;
+            //read RDB files, add rdb_tables to myTables.
+            readRDB();
+            System.out.println(myTables);
+            //Merge all tables by given merge order
+    //        List<Vector> myResult = mergeTableV3(Arrays.asList("Invoices","OrderId","Orderline","asin","price"));
+            List<Vector> myResult = mergeTable(tagList);
+            tjFastTable =  myResult;
+        }
+        catch(Exception e)
+        {System.out.println(e);}
+
     }
     public List<Vector> mergeTable(List<String> mergeOrder) throws Exception{
         List<Vector> myResult = new ArrayList<>();
@@ -114,7 +119,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                         //sort myResult on addedTag
                         Collections.sort(myResult,new MyComparator(Arrays.asList(addedTagCursor)));
                         //join tablesToMergeOnAddedTag with myResult
-                        myResult = joinWithResult(myResult, addedTagCursor, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap);
+                        myResult = joinWithResult(myResult, addedTagCursor, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap, order*2);
                     }
                 }
 
@@ -138,7 +143,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         return myResult;
     }
 
-    public List<Vector> joinWithResult(List<Vector> myResult, int resultColumn, List<List<Vector>> tablesToMergeOnAddedTag, List<List<Integer>> addedTagColumn, HashMap<String, List<int[]>> tagHashMap){
+    public List<Vector> joinWithResult(List<Vector> myResult, int resultColumn, List<List<Vector>> tablesToMergeOnAddedTag, List<List<Integer>> addedTagColumn, HashMap<String, List<int[]>> tagHashMap, int orgRowSize){
         Boolean notEnd = true;
         List<Vector> myNewResult = new ArrayList<>();
         int[] rowCursor = new int[tablesToMergeOnAddedTag.size()+1];
@@ -162,22 +167,25 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
                 //@@@@@!!!! only one table to join
                 Vector row = (Vector) resultRow;//@@@@if needs to be cloned
-                if(row.size() == myResultSize){
-                    String value = tagValues.get(0);
+                if(row.size() == orgRowSize){
+                    String value = tablesToMergeOnAddedTag.get(0).get(rowCursor[1]).get((int) addedTagColumn.get(0).get(1)).toString();
                     row.addAll(Arrays.asList(value, tagHashMap.get(value)));
                     myNewResult.add(row);
-                    //move row cursor
+                    //@@@@@move row cursor
+                    rowCursor[0]++;
                 }
                 //else myResult has addTag to join
                 else{
-                    String resultAddTagValue = row.get(myResultSize).toString();
+                    String resultAddTagValue = row.get(orgRowSize).toString();
                     //@@@only one table
-                    String addTagValue = tablesToMergeOnAddedTag.get(0).get(rowCursor[0+1]).get((int) addedTagColumn.get(0).get(1)).toString();
+                    String addTagValue = tablesToMergeOnAddedTag.get(0).get(rowCursor[1]).get((int) addedTagColumn.get(0).get(1)).toString();
                     //compare
                     int compResult = resultAddTagValue.compareTo(addTagValue);
                     if(compResult == 0){
                         //if equals, add this row to myNewResult, id_list does not need to be added again
                         myNewResult.add(resultRow);
+                        //move cursor
+                        rowCursor[0]++;
                     }
                     else if(compResult > 0){
                         rowCursor[1]++;
@@ -395,8 +403,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
 
         // Tell the XMLReader to parse the XML document
         xmlReader.parse(convertToFileURL(filename));
-        queryAnalysis_multiV2 qm = new queryAnalysis_multiV2();
-        qm.getSolution();
+
     }
     // Error handler to report errors and warnings
     private static class MyErrorHandler implements ErrorHandler {
@@ -438,6 +445,10 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         public void fatalError(SAXParseException spe) throws SAXException {
             String message = "Fatal Error: " + getParseExceptionInfo(spe);
             throw new SAXException(message);
+        }
+
+        public void excepError() throws  Exception{
+            out.println("Exception");
         }
     }
     /**
@@ -534,5 +545,104 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     }//end endElement
 
     // Parser calls this once after parsing a document
-    public void endDocument() throws SAXException {}
+    public void endDocument() throws SAXException {
+//        getSolution();
+        System.out.println("begin analysis query !");
+
+        Query.setTwigTagNames(twigTagNames);
+
+
+        Query.setRoot(ROOT);
+
+        utilities.DebugPrintln("Query root is " + Query.getRoot());
+
+        System.out.println("begin analysis document !");
+
+        try {
+            DTDTable DTDInfor = loadDataSet.produceDTDInformation(basicDocuemnt);
+
+            long totalbeginTime = System.currentTimeMillis();
+            long loadendTime = 0L;
+            long loadQueryEndTime = 0L;
+            long joinbeginTime = 0L;
+            long joinendTime = 0L;
+            long totalLoadTime = 0L;
+            long totalJoinTime = 0L;
+
+            Query.preComputing(DTDInfor);
+
+            loadDataSet d = new loadDataSet();
+            System.out.println("begin load data !");
+
+
+            List<Hashtable[]> ALLData = new ArrayList<Hashtable[]>();
+            labelMatching lm = new labelMatching();
+            List<String> tagList = new ArrayList<>();
+            for(int i=0;i< Query.getLeaves().size();i++){
+                tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
+            }
+
+//            List<Vector> re = lm.getSolution(tagList); // get xml value match table result
+            // start to calculate the running time
+            //long totalbeginTime = System.currentTimeMillis();
+            //long tjFastbeginTime = System.currentTimeMillis();
+            //long tjFastbyAddTime = 0L;
+            //System.out.println("start multi-times tjFast");
+            int solutionCount = 0;
+
+//            for(int i = 0;i<100;i++){
+//                part0.add(o[0].get(i));
+//                part1.add(o[1].get(i));
+//            }
+//            Vector partO[] = new Vector[2];
+//            partO[0] = part0;
+//            partO[1] = part1;
+            for(int i=0;i<tjFastTable.size();i++) {
+                long loadbeginTime = System.currentTimeMillis();
+                Hashtable[] alldata = d.loadAllLeafData(tjFastTable.get(i), DTDInfor,tagList);
+
+                //for double layer query only
+//                alldata[0].put(tagList.get(2),partO[0]);
+//                alldata[1].put(tagList.get(2), partO[1]);
+
+//                alldata[0].put(tagList.get(2),o[0]);
+//                alldata[1].put(tagList.get(2), o[1]);
+                //System.out.println("Query leaves:" + Query.getLeaves());
+
+//                System.out.println("i:"+i);
+                loadendTime = System.currentTimeMillis();
+                //System.out.println("load data time is " + (loadendTime - loadbeginTime));
+                totalLoadTime += loadendTime - loadbeginTime;
+
+                //join
+                //System.out.println("begin join !");
+
+                joinbeginTime = System.currentTimeMillis();
+
+                TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
+
+                solutionCount += join.beginJoin();
+//                System.out.println("solutionCount:"+solutionCount);
+                joinendTime = System.currentTimeMillis();
+                //System.out.println("join data time is " + (joinendTime - joinbeginTime));
+                totalJoinTime += joinendTime - joinbeginTime;
+                //tjFastbyAddTime = tjFastbyAddTime + joinendTime -loadbeginTime;
+            }
+            long tjFastEndTime = System.currentTimeMillis();
+            long totalendTime = System.currentTimeMillis();
+            System.out.println("solutionCount:"+solutionCount);
+            //System.out.println("Total tjFast time is " + (tjFastEndTime-tjFastbeginTime));
+            //System.out.println("Total tjFast by add time is " + tjFastbyAddTime);
+
+
+            System.out.println("Total tjFast load data time is " + totalLoadTime);
+
+            System.out.println("Total tjFast join data time is " + totalJoinTime);
+
+            System.out.println("Total running time is " + (totalendTime - totalbeginTime));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
