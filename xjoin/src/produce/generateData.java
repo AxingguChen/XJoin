@@ -1,45 +1,31 @@
 package produce;
 
 import java.io.EOFException;
+import java.io.File;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class generateData {
 
-    public List<List<String>> buildRDBValue(List<String> tagList) throws  Exception{
-        List<List<String>> result = new ArrayList<>();
-        String twigL = "asin";
-        String twigR = "price";
-        int count = 0;
-        try{
-            RandomAccessFile r_vl = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigL+"_v","rw");//read value file
-            RandomAccessFile r_vr = new  RandomAccessFile("xjoin/src/produce/outputData/"+twigR+"_v","rw");//read value file
-            r_vl.seek(0);
-            r_vr.seek(0);
-            String valuel = null;
-            String valuer = null;
-
-            while ( (valuel=r_vl.readUTF()) != null && (valuer=r_vr.readUTF()) != null )
-            {
-                List<String> valueList = new ArrayList<>();
-//                valuel = valuel+"_"+count;
-//                valuer = valuer+"_"+count;
-                valueList.addAll(Arrays.asList(valuel,valuer));
-                result.add(valueList);
-                count++;
-                //System.out.println("build value:"+valuel + " "+valuer);
-            }
-
+    public static void buildRDBValue() throws  Exception{
+        PrintWriter pw = new PrintWriter(new File("xjoin/src/multi_rbds/testTables/test.csv"));
+        StringBuilder sb = new StringBuilder();
+        Random rand = new Random();
+        for(int i=0; i<10000; i++){
+            sb.append(rand.nextInt(50)+"");
+            sb.append(',');
+            sb.append(rand.nextInt(50)+"");
+            sb.append('\n');
         }
-        catch (EOFException eofex) {
-            //do nothing
-        }
-        catch(Exception e){
-            System.out.println("e is:"+e);
-        }
-        ////System.out.println("original build RDB value count:"+count);
-        return result;
+        pw.write(sb.toString());
+        pw.close();
+        System.out.println("done!");
+    }
+    public static void main(String[] args) throws Exception{
+        buildRDBValue();
     }
 }

@@ -74,7 +74,12 @@ public class generateValueIdPair extends DefaultHandler {
 
     public int isPC(String parent, String child){
         for(int i=0;i<tagList.size();i++){
-            if(tagList.get(i).get(0).equals(parent) && tagList.get(i).get(1).equals(child)){
+            // 20 is plussed in order to separate parent_child pc or single tag list
+            if(tagList.get(i).size() == 1){
+                if(tagList.get(i).get(0).equals(child))
+                    return i+20;
+            }
+            else if(tagList.get(i).get(0).equals(parent) && tagList.get(i).get(1).equals(child)){
                 return i;
             }
         }
@@ -94,19 +99,19 @@ public class generateValueIdPair extends DefaultHandler {
         }//end if
         else {
             String parent = (String) tagPathStack.peek();
+            String p_value = null;
             if(!eleValueStack.empty()){
-                String p_value = (String) eleValueStack.peek();
-                int orderNo = isPC(parent,child);
-                //if current parent and child is p-c relationship in query, add parent value
-                if(orderNo >= 0){
-                    pc_no = orderNo;
-                    pvId_cvId = new Vector();
-//                    pvId = new Vector();
-                    c_id = new Vector();
-                    pvId_cvId.add(p_value);//first: parent_value
-//                    pvId_cvId.add(p_value);//first: parent_value
-                }
+                p_value = (String) eleValueStack.peek();
             }
+            int orderNo = isPC(parent,child);
+            //if current parent and child is p-c relationship in query, add parent value
+            if(orderNo >= 0){
+                pc_no = orderNo;
+                pvId_cvId = new Vector();
+                c_id = new Vector();
+                if(orderNo < 20) pvId_cvId.add(p_value);//first: parent_value
+            }
+
             int maxleftSibling = ((Integer) maxSilblingStack.peek()).intValue();
 
             int newLabel = dtdTable.getLabel(parent, child, maxleftSibling);
@@ -173,6 +178,7 @@ public class generateValueIdPair extends DefaultHandler {
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
         if (pc_no>=0) {
+            if(pc_no >20) pc_no -= 20;
             pvId_cvId.addAll(Arrays.asList(value,c_id.get(0)));// third & fourth: child_value, child_id
             pcTables.get(pc_no).add(pvId_cvId);
             pc_no = -1;
@@ -187,9 +193,9 @@ public class generateValueIdPair extends DefaultHandler {
         for (int i = 1; i < labelPathStack.size(); i++)
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
         if (pc_no>=0) {
-//            pvId_cvId.add(labels);//second: child_id
-            pvId_cvId.add(Arrays.copyOf(labels, labels.length-1));//second: parent_id
-//            pvId_cvId.add(pvId);
+            if(pc_no<20) {
+                pvId_cvId.add(Arrays.copyOf(labels, labels.length - 1));//second: parent_id
+            }
             c_id.add(labels);//child_id
 
             validEleNum ++;
@@ -223,7 +229,8 @@ public class generateValueIdPair extends DefaultHandler {
     public void doAnalysis() throws Exception {
         //filename = args[0];
 
-        filename = "xjoin/src/test.xml";
+//        filename = "xjoin/src/test.xml";
+        filename = "xjoin/src/multi_rdbs/Invoice.xml";
         if (filename == null) {
             usage();
         }
@@ -254,7 +261,7 @@ public class generateValueIdPair extends DefaultHandler {
     public List<List<Vector>> generatePCVId(List<List<Vector>> PCTables) throws Exception {
 
             generateValueIdPair g = new generateValueIdPair();
-            //pcTables is going to store the final P-C tables results. PCTables is passed in from tjFast.queryAnalysis_multi
+            //pcTables is going to store the final P-C tables results. PCTables is passed in from tjFast.queryAnalysis_multiBackup
             pcTables = PCTables;
             for(List<Vector> pc:PCTables){
                 //The first row of PCTables stores the [parent_tag, child_tag]
