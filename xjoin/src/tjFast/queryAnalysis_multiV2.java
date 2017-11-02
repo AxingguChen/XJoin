@@ -27,8 +27,8 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     public void getSolution(){
         try{
             long beginTime = System.currentTimeMillis();
-//            List<String> tagList = Arrays.asList("a","b","c","d","e");
-            List<String> tagList = Arrays.asList("Invoice","OrderId","Orderline","asin","price");
+            List<String> tagList = Arrays.asList("a","b","c","d","e");
+//            List<String> tagList = Arrays.asList("Invoice","OrderId","Orderline","asin","price");
             for(String s:tagList){
                 if(! xmlRelationTagSet.contains(s)){
                     Vector v = new Vector();
@@ -142,7 +142,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                         Collections.sort(myResult,new MyComparator(Arrays.asList(addedTagCursor*2)));
                         long time2 = System.currentTimeMillis();
                         totalSortTableTime += time2 - time1;
-                        myResult = joinWithResult(myResult, addedTagCursor, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap, order*2);
+                        myResult = joinWithResult(myResult, addedTagCursor*2, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap, order*2);
 
                         }
                 }
@@ -181,7 +181,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             //tagValues is to store current row values from tables
             List<String> tagValues = new ArrayList<>();
             Vector resultRow = myResult.get(rowCursor[0]);
-            tagValues.add(resultRow.get(resultColumn*2).toString());
+            tagValues.add(resultRow.get(resultColumn).toString());
             for(int tableCursor = 0; tableCursor < tablesToMergeOnAddedTag.size(); tableCursor++){
                 tagValues.add(tablesToMergeOnAddedTag.get(tableCursor).get(rowCursor[tableCursor+1]).get((int) addedTagColumn.get(tableCursor).get(0)).toString());
             }
