@@ -216,13 +216,12 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                             }
                         }
                     }
-                    myResult = myNewResult;
 
                 }
                 //else myResult has addTag to join
                 else{
                     //sort part table on addTag
-                    Collections.sort(myResult,new MyComparator(Arrays.asList(orgRowSize)));
+                    Collections.sort(myResult,new MyComparator(Arrays.asList(resultColumn)));
                     Collections.sort(mergeTableRows,new MyComparator(Arrays.asList(addedTagColumn.get(0).get(1))));
                     int i=0, j =0;
                     while(i != partResultRows.size() && j != mergeTableRows.size()){
