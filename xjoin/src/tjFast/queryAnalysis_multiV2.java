@@ -207,8 +207,8 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
                 if(row.size() == orgRowSize){
                     for(int i=0; i<partResultRows.size(); i++){
-                        Vector thisRow = (Vector)partResultRows.get(i).clone();
                         for(int j=0; j<mergeTableRows.size(); j++){
+                            Vector thisRow = (Vector)partResultRows.get(i).clone();
                             String value = mergeTableRows.get(j).get((int) addedTagColumn.get(0).get(1)).toString();
                             if(tagHashMap.containsKey(value)){
                                 thisRow.addAll(Arrays.asList(value, tagHashMap.get(value)));
