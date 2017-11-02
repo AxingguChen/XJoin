@@ -17,6 +17,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     String ROOT;
 
     Stack TagStack;
+    static long totalSortTableTime = 0L;
 
     static String basicDocuemnt;
     static List<List<Vector>> myTables = new ArrayList<>();
@@ -51,9 +52,13 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             endTime = System.currentTimeMillis();
             System.out.println("read rdb time:"+(endTime-beginTime));
 
+            beginTime = System.currentTimeMillis();
             System.out.println("merge tables");
             List<Vector> myResult = mergeTable(tagList);
             tjFastTable =  myResult;
+            endTime = System.currentTimeMillis();
+            System.out.println("sort table time:"+totalSortTableTime);
+            System.out.println("merge Table time:"+(endTime-beginTime-totalSortTableTime));
         }
         catch(Exception e)
         {
@@ -85,7 +90,10 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     //remove first row of table since the first row is the names of tags, and table needs to be sorted later.
                     List<Vector> table_removeFirstRow = table.subList(1,table.size());
                     //sort table by addTag
+                    long time1 = System.currentTimeMillis();
                     Collections.sort(table_removeFirstRow,new MyComparator(Arrays.asList(table_column*2)));
+                    long time2 = System.currentTimeMillis();
+                    totalSortTableTime += time2 -time1;
                     //add table that contains addTag to list
                     tablesToMerge.add(table_removeFirstRow);
                     //add first row of table(table tag names) to a list, since we need to check tables' other tags later.
@@ -119,7 +127,10 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                             addedTagColumn.add(columnNos);
                             List<Vector> currentTable = tablesToMerge.get(tableCursor);
                             //sort table by first addedTag, then addTag
+                            long time1 = System.currentTimeMillis();
                             Collections.sort(currentTable,new MyComparator(columnNos));
+                            long time2 = System.currentTimeMillis();
+                            totalSortTableTime += time2-time1;
                             //add table to mergeList
                             tablesToMergeOnAddedTag.add(currentTable);
                         }
@@ -127,11 +138,15 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     //exists table(s) to join with Result table
                     if(!addedTagColumn.isEmpty()){
                         //sort myResult on addedTag
+                        long time1 = System.currentTimeMillis();
                         Collections.sort(myResult,new MyComparator(Arrays.asList(addedTagCursor*2)));
-                        //join tablesToMergeOnAddedTag with myResult
+                        long time2 = System.currentTimeMillis();
+                        totalSortTableTime += time2 - time1;
                         myResult = joinWithResult(myResult, addedTagCursor, tablesToMergeOnAddedTag, addedTagColumn, tagHashMap, order*2);
-                    }
+
+                        }
                 }
+
 
                 //if tablesToMerge does not have any common tag with Result list, add each key in tagHashMap to each row of the table
                 if(myResult.get(0).size() == order*2){//(1*2 = 2)
@@ -173,38 +188,60 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             int compareResult = makeComparision(tagValues);
 
             if(compareResult == -1){
+                String commonValue = tagValues.get(0);
+                int[] orgRowCursor =  rowCursor;
+                Vector retur = moveCursorUntilNextNew(myResult, rowCursor[0], resultColumn, commonValue);
+                rowCursor[0] = (int)retur.get(0);
+                List<Vector> partResultRows = (List<Vector>)retur.get(1);
+                List<List<Vector>> partMergeTableRows = new ArrayList<>();
+                for(int tableCursor = 0; tableCursor < tablesToMergeOnAddedTag.size(); tableCursor++){
+                    Vector returr = (Vector) moveCursorUntilNextNew(tablesToMergeOnAddedTag.get(tableCursor),rowCursor[tableCursor+1],(int) addedTagColumn.get(tableCursor).get(0),commonValue);
+                    rowCursor[tableCursor+1] = (int) returr.get(0);
+                    partMergeTableRows.add((List<Vector>)returr.get(1));
+                }
+
                 //compare addTag column value
-                //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
-                //@@@@@!!!! only one table to join
+                //@@@@@ only one table to join
                 Vector row = (Vector) resultRow;//@@@@if needs to be cloned
+                List<Vector> mergeTableRows = partMergeTableRows.get(0);
+                //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
                 if(row.size() == orgRowSize){
-                    String value = tablesToMergeOnAddedTag.get(0).get(rowCursor[1]).get((int) addedTagColumn.get(0).get(1)).toString();
-                    if(tagHashMap.containsKey(value)){
-                        row.addAll(Arrays.asList(value, tagHashMap.get(value)));
-                        myNewResult.add(row);
+                    for(int i=0; i<partResultRows.size(); i++){
+                        Vector thisRow = (Vector)partResultRows.get(i).clone();
+                        for(int j=0; j<mergeTableRows.size(); j++){
+                            String value = mergeTableRows.get(j).get((int) addedTagColumn.get(0).get(1)).toString();
+                            if(tagHashMap.containsKey(value)){
+                                thisRow.addAll(Arrays.asList(value, tagHashMap.get(value)));
+                                myNewResult.add(thisRow);
+                            }
+                        }
                     }
-                    //@@@@@move row cursor
-                    //@@@@@@@@@here has problem.....because of the move of the row table, you need to jump several values at
-                    //the same time and you need to write a recursion to compare tags one by one
-                    rowCursor[0]++;
+                    myResult = myNewResult;
+
                 }
                 //else myResult has addTag to join
                 else{
-                    String resultAddTagValue = row.get(orgRowSize).toString();
-                    //@@@only one table
-                    String addTagValue = tablesToMergeOnAddedTag.get(0).get(rowCursor[1]).get((int) addedTagColumn.get(0).get(1)).toString();
-                    //compare
-                    int compResult = resultAddTagValue.compareTo(addTagValue);
-                    if(compResult == 0){
-                        //if equals, add this row to myNewResult, id_list does not need to be added again
-                        myNewResult.add(resultRow);
-                        //move cursor
-                        rowCursor[0]++;
+                    //sort part table on addTag
+                    Collections.sort(myResult,new MyComparator(Arrays.asList(orgRowSize)));
+                    Collections.sort(mergeTableRows,new MyComparator(Arrays.asList(addedTagColumn.get(0).get(1))));
+                    int i=0, j =0;
+                    while(i != partResultRows.size() && j != mergeTableRows.size()){
+                        Vector partResultRow = partResultRows.get(i);
+                        Vector partJoinTableRow = mergeTableRows.get(j);
+                        String resultAddTagValue = partResultRow.get(orgRowSize).toString();
+                        String joinAddTagValue = partJoinTableRow.get(addedTagColumn.get(0).get(1)).toString();
+                        if(resultAddTagValue.compareTo(joinAddTagValue) == 0){
+                            if(tagHashMap.containsKey(resultAddTagValue)){
+                                myNewResult.add(partResultRow);
+                            }
+                        }
+                        else if(resultAddTagValue.compareTo(joinAddTagValue) > 0){
+                            rowCursor[1]++;
+                        }
+                        else{
+                            rowCursor[0]++;
+                        }
                     }
-                    else if(compResult > 0){
-                        rowCursor[1]++;
-                    }
-                    else rowCursor[0]++;
                 }
 
 
@@ -283,6 +320,25 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         v.add(row);
         v.add(id_list);
         return v;
+    }
+
+    //move rowNo until the next value is not the same, also add the same values' id to a list and return it.
+    public Vector moveCursorUntilNextNew(List<Vector> table, int rowNo, int columnNo, String commonValue){
+        Vector retur = new Vector();
+        List<Vector> v = new Vector();
+        int row=rowNo;
+        for(; row<table.size();){
+            Vector thisRow = table.get(row);
+            String compareValue =  thisRow.get(columnNo).toString();
+            if(commonValue.equals(compareValue)){
+                row++;
+                v.add(thisRow);
+            }
+            else break;
+        }
+        retur.add(row);
+        retur.add(v);
+        return retur;
     }
 
     //return table cursor, which need to go to next row.
