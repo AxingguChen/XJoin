@@ -221,24 +221,39 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 //else myResult has addTag to join
                 else{
                     //sort part table on addTag
-                    Collections.sort(myResult,new MyComparator(Arrays.asList(resultColumn)));
+                    Collections.sort(partResultRows,new MyComparator(Arrays.asList(resultColumn)));
                     Collections.sort(mergeTableRows,new MyComparator(Arrays.asList(addedTagColumn.get(0).get(1))));
-                    int i=0, j =0;
+                    int i=0, j=0;
                     while(i != partResultRows.size() && j != mergeTableRows.size()){
-                        Vector partResultRow = partResultRows.get(i);
-                        Vector partJoinTableRow = mergeTableRows.get(j);
+                        Vector partResultRow = partResultRows.get(rowCursor[0]);
+                        Vector partJoinTableRow = mergeTableRows.get(rowCursor[1]);
                         String resultAddTagValue = partResultRow.get(orgRowSize).toString();
                         String joinAddTagValue = partJoinTableRow.get(addedTagColumn.get(0).get(1)).toString();
                         if(resultAddTagValue.compareTo(joinAddTagValue) == 0){
                             if(tagHashMap.containsKey(resultAddTagValue)){
                                 myNewResult.add(partResultRow);
                             }
+                            //@@@@@@@@@ equals still need to take all the common values and maybe compare next value
+                            // move until next value is not common
+                            //@@@@@@@@@ after getting two id_lists, you need to compare their ids. If id occurs in two lists, add it to result, otherwise, will not.
+                            Vector v_j = moveCursorUntilNewValue(mergeTableRows, rowCursor[1], addedTagColumn.get(0).get(1), resultAddTagValue);
+                            Vector v_r = moveCursorUntilNewValue(partResultRows, rowCursor[0], resultColumn, resultAddTagValue);
+                            //take row numbers from this two vectors
+                            rowCursor[1] = (int)v_j.get(0);
+                            List<int[]> ids_j = (List<int[]>) v_j.get(1);
+                            rowCursor[0] = (int)v_r.get(0);
+                            List<int[]> ids_r = (List<int[]>) v_r.get(1);
+                            //find common ids
+
+
                         }
                         else if(resultAddTagValue.compareTo(joinAddTagValue) > 0){
                             rowCursor[1]++;
+                            j++;
                         }
                         else{
                             rowCursor[0]++;
+                            i++;
                         }
                     }
                 }
@@ -251,6 +266,24 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         return myNewResult;
     }
 
+
+    public int compareId(int[] id1, int[] id2){
+
+        return 0;
+    }
+
+    public List<int[]> getCommonIds(List<int[]> list1, List<int[]> list2){
+        List<int[]> commonIds = new ArrayList<>();
+        //the id lists should already be sorted since they are generating by an order
+        int i = 0, j=0;
+        int list1_size = list1.size();
+        int list2_size = list2.size();
+        while(i != list1_size && j != list2_size){
+            //compare ids
+        }
+
+        return commonIds;
+    }
 
     public HashMap<String, List<int[]>> getAddTagHashMap(List<List<Vector>> tablesToMerge, List<Integer> tableColumns){
         Boolean notEnd = true;
