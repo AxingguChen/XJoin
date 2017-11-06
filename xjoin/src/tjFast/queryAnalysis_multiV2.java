@@ -205,6 +205,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 Vector row = (Vector) resultRow;//@@@@if needs to be cloned
                 List<Vector> mergeTableRows = partMergeTableRows.get(0);
                 //if myResult does not have addTag to join. @@@@ add addTag to myResult, id_list can get from tagMap
+                //@@@@@@@@@@@@also need to compare id to see if the id can be added to the list
                 if(row.size() == orgRowSize){
                     for(int i=0; i<partResultRows.size(); i++){
                         for(int j=0; j<mergeTableRows.size(); j++){
@@ -244,7 +245,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                             rowCursor[0] = (int)v_r.get(0);
                             List<int[]> ids_r = (List<int[]>) v_r.get(1);
                             //find common ids
-
+                            List<int[]> commonIds = getCommonIds(ids_j, ids_r);
 
                         }
                         else if(resultAddTagValue.compareTo(joinAddTagValue) > 0){
@@ -260,18 +261,43 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
 
 
             }
-            //else move tables which value is minimal
+            //else move the table which value is minimal
             else rowCursor[compareResult] = rowCursor[compareResult]+1;
         }
         return myNewResult;
     }
 
 
+    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
     public int compareId(int[] id1, int[] id2){
+        int compareResult = 0;
+        //sizes are also need to be compared
+        int id1_size = id1.length;
+        int id2_size = id2.length;
+        int commonSize = id1_size;
+        if(id1_size > id2_size){
+            commonSize = id2_size;
+        }
+        for(int i=0; i< commonSize;i++){
+            if(id1[i] != id2[i]){
+                if(id1[i] > id2[i]){
+                    compareResult = 1;
+                }
+                else{
+                    compareResult = -1;
+                }
+                break;
+            }
+        }
+        if(compareResult == 0){
+            if(id1_size > id2_size) compareResult = 1;
+            else if(id1_size < id2_size) compareResult = -1;
+        }
 
-        return 0;
+        return compareResult;
     }
 
+    //list1/list2 has no same id in the list itself
     public List<int[]> getCommonIds(List<int[]> list1, List<int[]> list2){
         List<int[]> commonIds = new ArrayList<>();
         //the id lists should already be sorted since they are generating by an order
@@ -280,6 +306,23 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         int list2_size = list2.size();
         while(i != list1_size && j != list2_size){
             //compare ids
+            int[] id1 = list1.get(i);
+            int[] id2 = list2.get(j);
+            int compareResult = compareId(id1, id2);
+            //id1 = id2, add this id to commonId, then compare their next id to move the cursor
+            if(compareResult == 0){
+                commonIds.add(id1);
+                if( i+1 != list1_size) i++;
+                else j++;
+            }
+            //if id1 > id2
+            else if(compareResult > 0){
+                j++;
+            }
+            //else id1 < id2
+            else {
+                i++;
+            }
         }
 
         return commonIds;
