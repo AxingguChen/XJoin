@@ -1,5 +1,6 @@
 package tjFast;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 import produce.generateValueIdPair;
@@ -27,8 +28,8 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
     public void getSolution(){
         try{
             long beginTime = System.currentTimeMillis();
-            List<String> tagList = Arrays.asList("a","b","c","d","e");
-//            List<String> tagList = Arrays.asList("Invoice","OrderId","Orderline","asin","price");
+//            List<String> tagList = Arrays.asList("a","b","c","d","e");
+            List<String> tagList = Arrays.asList("Invoice","OrderId","Orderline","asin","price");
             for(String s:tagList){
                 if(! xmlRelationTagSet.contains(s)){
                     Vector v = new Vector();
@@ -173,7 +174,9 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         List<Vector> myNewResult = new ArrayList<>();
         int[] rowCursor = new int[tablesToMergeOnAddedTag.size()+1];
         int myResultSize = myResult.size();
+        System.out.println("myResultSize:"+myResultSize);
         while(notEnd){
+            System.out.println("myResultRowCursor:"+rowCursor[0]);
             //any one of the tables has gone to the end
             if(rowCursor[0]==myResultSize || isEnd(tablesToMergeOnAddedTag,rowCursor)){
                 break;
@@ -222,38 +225,49 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 //else myResult has addTag to join
                 else{
                     //sort part table on addTag
-                    Collections.sort(partResultRows,new MyComparator(Arrays.asList(resultColumn)));
+                    Collections.sort(partResultRows,new MyComparator(Arrays.asList(orgRowSize)));
                     Collections.sort(mergeTableRows,new MyComparator(Arrays.asList(addedTagColumn.get(0).get(1))));
                     int i=0, j=0;
                     while(i != partResultRows.size() && j != mergeTableRows.size()){
-                        Vector partResultRow = partResultRows.get(rowCursor[0]);
-                        Vector partJoinTableRow = mergeTableRows.get(rowCursor[1]);
+                        Vector partResultRow = partResultRows.get(i);
+                        Vector partJoinTableRow = mergeTableRows.get(j);
                         String resultAddTagValue = partResultRow.get(orgRowSize).toString();
                         String joinAddTagValue = partJoinTableRow.get(addedTagColumn.get(0).get(1)).toString();
-                        if(resultAddTagValue.compareTo(joinAddTagValue) == 0){
-                            if(tagHashMap.containsKey(resultAddTagValue)){
-                                myNewResult.add(partResultRow);
+                        int compare_result = resultAddTagValue.compareTo(joinAddTagValue);
+                        if(compare_result == 0){
+                            //we do not need to check if tagHashMap contains the key again.
+//                            if(tagHashMap.containsKey(resultAddTagValue)){
+//                                myNewResult.add(partResultRow);
+//                            }
+                            myNewResult.add(partResultRow);
+                            if((j+1)!=mergeTableRows.size()){
+                                j++;
                             }
-                            //@@@@@@@@@ equals still need to take all the common values and maybe compare next value
-                            // move until next value is not common
-                            //@@@@@@@@@ after getting two id_lists, you need to compare their ids. If id occurs in two lists, add it to result, otherwise, will not.
-                            Vector v_j = moveCursorUntilNewValue(mergeTableRows, rowCursor[1], addedTagColumn.get(0).get(1), resultAddTagValue);
-                            Vector v_r = moveCursorUntilNewValue(partResultRows, rowCursor[0], resultColumn, resultAddTagValue);
-                            //take row numbers from this two vectors
-                            rowCursor[1] = (int)v_j.get(0);
-                            List<int[]> ids_j = (List<int[]>) v_j.get(1);
-                            rowCursor[0] = (int)v_r.get(0);
-                            List<int[]> ids_r = (List<int[]>) v_r.get(1);
-                            //find common ids
-                            List<int[]> commonIds = getCommonIds(ids_j, ids_r);
+                            else i++;
+
+//                            //@@@@@@@@@ equals still need to take all the common values and maybe compare next value
+//                            // move until next value is not common
+//                            //@@@@@@@@@ after getting two id_lists, you need to compare their ids. If id occurs in two lists, add it to result, otherwise, will not.
+//                            Vector v_j = moveCursorUntilNewValue(mergeTableRows, j, addedTagColumn.get(0).get(1), resultAddTagValue);
+//                            Vector v_r = moveCursorUntilNewValue(partResultRows, i, resultColumn, resultAddTagValue);
+//                            //take row numbers from this two vectors
+//                            rowCursor[1] = (int)v_j.get(0);
+////                            List<int[]> ids_j = (List<int[]>) v_j.get(1);
+//                            rowCursor[0] = (int)v_r.get(0);
+////                            List<int[]> ids_r = (List<int[]>) v_r.get(1);
+////                            //find common ids
+////                            List<int[]> commonIds = getCommonIds(ids_j, ids_r);
 
                         }
-                        else if(resultAddTagValue.compareTo(joinAddTagValue) > 0){
-                            rowCursor[1]++;
+                        else if(compare_result > 0){
+//                            rowCursor[1]++;
                             j++;
                         }
                         else{
-                            rowCursor[0]++;
+                            if (i != partResultRows.size() && i > 0 && resultAddTagValue.equals(partResultRows.get(i-1).get(orgRowSize).toString())) {
+                                myNewResult.add(partResultRow);
+                            }
+//                            rowCursor[0]++;
                             i++;
                         }
                     }
@@ -264,69 +278,147 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             //else move the table which value is minimal
             else rowCursor[compareResult] = rowCursor[compareResult]+1;
         }
+        System.out.println("myNewResultSize:"+myNewResult.size());
         return myNewResult;
     }
 
 
-    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
-    public int compareId(int[] id1, int[] id2){
+//    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
+//    public int compareId(int[] id1, int[] id2){
+//        int compareResult = 0;
+//        //sizes are also need to be compared
+//        int id1_size = id1.length;
+//        int id2_size = id2.length;
+//        int commonSize = id1_size;
+//        if(id1_size > id2_size){
+//            commonSize = id2_size;
+//        }
+//        for(int i=0; i< commonSize;i++){
+//            if(id1[i] != id2[i]){
+//                if(id1[i] > id2[i]){
+//                    compareResult = 1;
+//                }
+//                else{
+//                    compareResult = -1;
+//                }
+//                break;
+//            }
+//        }
+//        if(compareResult == 0){
+//            if(id1_size > id2_size) compareResult = 1;
+//            else if(id1_size < id2_size) compareResult = -1;
+//        }
+//
+//        return compareResult;
+//    }
+
+
+
+    public int compareIds(List<int[]> ids){
         int compareResult = 0;
+        Boolean isEqual = true;
+        Boolean sizeIsEqual = true;
+        int size_sFlag = 0;
+        int allSize = ids.size();
+        int smallSize = ids.get(0).length;
         //sizes are also need to be compared
-        int id1_size = id1.length;
-        int id2_size = id2.length;
-        int commonSize = id1_size;
-        if(id1_size > id2_size){
-            commonSize = id2_size;
-        }
-        for(int i=0; i< commonSize;i++){
-            if(id1[i] != id2[i]){
-                if(id1[i] > id2[i]){
-                    compareResult = 1;
+        int[] idSizes = new int[allSize];
+        //compare if size are the same length
+        for(int i=1; i< allSize; i++){
+            int curSize = ids.get(i).length;
+            if(curSize !=smallSize){
+                sizeIsEqual = false;
+                if(curSize<smallSize){
+                    smallSize = curSize;
+                    size_sFlag = i;
                 }
-                else{
-                    compareResult = -1;
-                }
-                break;
             }
         }
-        if(compareResult == 0){
-            if(id1_size > id2_size) compareResult = 1;
-            else if(id1_size < id2_size) compareResult = -1;
+        for(int i=0; i< smallSize;i++){
+            int baseV = ids.get(0)[i];
+            for(int j=1; j<allSize; j++){
+                int compV = ids.get(j)[i];
+                if(compV != baseV){
+                    isEqual = false;
+                    if(compV < baseV){
+                        compareResult = j;
+                        baseV = compV;
+                    }
+                }
+            }
         }
+        //if the size is same
+        if(!sizeIsEqual && isEqual){
+            return size_sFlag;
 
-        return compareResult;
+        }else{
+            if(isEqual) return -1;
+            else return compareResult;
+        }
     }
 
-    //list1/list2 has no same id in the list itself
-    public List<int[]> getCommonIds(List<int[]> list1, List<int[]> list2){
+
+    public List<int[]> getCommonId(List<List<int[]>> idLists){
+        int idLists_size = idLists.size();
         List<int[]> commonIds = new ArrayList<>();
-        //the id lists should already be sorted since they are generating by an order
-        int i = 0, j=0;
-        int list1_size = list1.size();
-        int list2_size = list2.size();
-        while(i != list1_size && j != list2_size){
-            //compare ids
-            int[] id1 = list1.get(i);
-            int[] id2 = list2.get(j);
-            int compareResult = compareId(id1, id2);
-            //id1 = id2, add this id to commonId, then compare their next id to move the cursor
-            if(compareResult == 0){
-                commonIds.add(id1);
-                if( i+1 != list1_size) i++;
-                else j++;
-            }
-            //if id1 > id2
-            else if(compareResult > 0){
-                j++;
-            }
-            //else id1 < id2
-            else {
-                i++;
+        if(idLists_size == 1){
+            commonIds = idLists.get(0);
+        }
+        else{
+            int[] rowCursor = new int[idLists_size];
+            Boolean notEnd = true;
+            while(notEnd){
+                if(isIdEnd(idLists, rowCursor)) break;
+                //add current row id to list
+                List<int[]> currentRowIds = new ArrayList<>();
+                for(int i=0; i<idLists_size; i++){
+                    currentRowIds.add(idLists.get(i).get(rowCursor[i]));
+                }
+                int compa = compareIds(currentRowIds);
+                //compa-> -1 means the ids are equal. other values means to move corresponding cursor.
+                if(compa==-1){
+                    commonIds.add(currentRowIds.get(0));
+                    //since id will not duplicate in the same list, so move each idList to the next row
+                    for(int i=0; i<idLists_size; i++){
+                        rowCursor[i] += 1;
+                    }
+                }
+                else rowCursor[compa] += 1;
             }
         }
-
         return commonIds;
     }
+
+//    //list1/list2 has no same id in the list itself
+//    public List<int[]> getCommonIds(List<int[]> list1, List<int[]> list2){
+//        List<int[]> commonIds = new ArrayList<>();
+//        //the id lists should already be sorted since they are generating by an order
+//        int i = 0, j=0;
+//        int list1_size = list1.size();
+//        int list2_size = list2.size();
+//        while(i != list1_size && j != list2_size){
+//            //compare ids
+//            int[] id1 = list1.get(i);
+//            int[] id2 = list2.get(j);
+//            int compareResult = compareId(id1, id2);
+//            //id1 = id2, add this id to commonId, then compare their next id to move the cursor
+//            if(compareResult == 0){
+//                commonIds.add(id1);
+//                if( i+1 != list1_size) i++;
+//                else j++;
+//            }
+//            //if id1 > id2
+//            else if(compareResult > 0){
+//                j++;
+//            }
+//            //else id1 < id2
+//            else {
+//                i++;
+//            }
+//        }
+//
+//        return commonIds;
+//    }
 
     public HashMap<String, List<int[]>> getAddTagHashMap(List<List<Vector>> tablesToMerge, List<Integer> tableColumns){
         Boolean notEnd = true;
@@ -345,7 +437,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 tagValueIdMap.put(value, id_list);
             }
         }
-        //many table contains addTag, join them on addTag
+        //many table contains addTag, join them on addTag. But maybe not all of the tables have ids.
         else{
             while(notEnd){
                 //any one of the tables has gone to the end
@@ -357,17 +449,19 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                     tagValues.add(tablesToMerge.get(tableCursor).get(rowCursor[tableCursor]).get(tableColumns.get(tableCursor)).toString());
                 }
                 int compareResult = makeComparision(tagValues);
-                //if values equals
+                //if values equals, compare ids
                 if(compareResult == -1){
-                    List<int[]> id_Lists = new ArrayList<>();
+                    List<List<int[]>> id_Lists = new ArrayList<>();
                     String commonValue = tagValues.get(0);
                     for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
                         Vector v = moveCursorUntilNewValue(tablesToMerge.get(tableCursor),rowCursor[tableCursor],tableColumns.get(tableCursor),commonValue);
                         rowCursor[tableCursor] = (int)v.get(0);
                         List<int[]> id_list = (List<int[]>)v.get(1);
-                        if(!id_list.isEmpty()) id_Lists.addAll(id_list);//only add null id list to id_Lists
+                        if(!id_list.isEmpty()) id_Lists.add(id_list);//only add null id list to id_Lists
                     }
-                    tagValueIdMap.put(commonValue,id_Lists);
+                    //find id that occurs in all list
+                    List<int[]> sameId_List = getCommonId(id_Lists);
+                    tagValueIdMap.put(commonValue,sameId_List);
                 }
                 //if not equals, add one to the row cursor number of the smallest table
                 else{
@@ -377,6 +471,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         }
         return tagValueIdMap;
     }
+
 
     //move rowNo until the next value is not the same, also add the same values' id to a list and return it.
     public Vector moveCursorUntilNewValue(List<Vector> table, int rowNo, int columnNo, String commonValue){
@@ -448,6 +543,18 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         }
         return false;
     }
+
+    //return true means one table has gone to the end.
+    public boolean isIdEnd(List<List<int[]>> idLists, int[] rowCursor){
+        for(int i=0;i<idLists.size();i++){
+            // the last element of this table
+            if(idLists.get(i).size() == rowCursor[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     //compare by column numbers one by one
     public class MyComparator implements Comparator<Vector> {
