@@ -56,7 +56,7 @@ public class loadDataSet {
             r_v.seek(0);
             String value = null;
             int count = 0;
-            while ((value = r_v.readUTF()) != null && count < 3000)
+            while ((value = r_v.readUTF()) != null)
             { 	byte len = r.readByte();
                 //System.out.println("length is "+len);
                 int [] data = new int [len];

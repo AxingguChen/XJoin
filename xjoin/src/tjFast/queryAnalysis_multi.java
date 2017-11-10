@@ -224,7 +224,7 @@ public class queryAnalysis_multi extends DefaultHandler{
         System.out.println("getSolution:"+ myTables);
         generateValueIdPair generate = new generateValueIdPair();
         //divide p-c relation in xml to RDBs.
-        myTables = generate.generatePCVId(myTables);
+//        myTables = generate.generatePCVId(myTables);
         System.out.println(myTables);
         //PCCount--the count of pc relations, will be use to divide pc_table and rdb_table in myTables
         //PCCount = myTables.size();

@@ -189,7 +189,7 @@ public class documentAnalysis extends DefaultHandler {
     public void doAnalysis() throws Exception {
         //filename = args[0];
 
-        filename = "xjoin/src/test.xml";
+        filename =  "xjoin/src/multi_rdbs/Invoice.xml";
         if (filename == null) {
             usage();
         }
@@ -220,8 +220,8 @@ public class documentAnalysis extends DefaultHandler {
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
 
-        tagList.addAll(Arrays.asList("a","b","c","d","e"));
-        //tagList.addAll(Arrays.asList("Invoices","Invoice","OrderId","asin","price","Orderline"));
+//        tagList.addAll(Arrays.asList("a","b","c","d","e"));
+        tagList.addAll(Arrays.asList("Invoices","Invoice","OrderId","asin","price","Orderline"));
         //delete previous files
         File directory = new File("xjoin/src/produce/outputData");
         for(File f: directory.listFiles())

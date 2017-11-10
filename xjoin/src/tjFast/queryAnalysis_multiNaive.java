@@ -1,16 +1,18 @@
 package tjFast;
-import javax.xml.parsers.*;
 
 import org.xml.sax.*;
-import org.xml.sax.helpers.*;
+import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+import java.io.PrintStream;
 import java.util.*;
-import java.io.*;
 
 /**
  * Created by zzzhou on 2017-07-18.
  */
-public class queryAnalysis_naive extends DefaultHandler {
+public class queryAnalysis_multiNaive extends DefaultHandler {
     Hashtable twigTagNames;
 
     static String filename;
@@ -142,7 +144,7 @@ public class queryAnalysis_naive extends DefaultHandler {
 
             List<HashMap<String, String>> allTagIDValue = d.getAllTagIDValue();
 
-            join.beginJoin_naive(allTagIDValue);
+            join.beginJoin_naiveMulti(allTagIDValue);
 
             long joinendTime = System.currentTimeMillis();
 
@@ -184,7 +186,7 @@ public class queryAnalysis_naive extends DefaultHandler {
     }
 
     private static void usage() {
-        System.err.println("Usage: QueryAnalysis <file.xml>");
+        System.err.println("Usage: QueryAnalysis_multiNaive <file.xml>");
         System.exit(1);
     }
 
@@ -216,7 +218,7 @@ public class queryAnalysis_naive extends DefaultHandler {
         XMLReader xmlReader = saxParser.getXMLReader();
 
         // Set the ContentHandler of the XMLReader
-        xmlReader.setContentHandler(new queryAnalysis_naive());
+        xmlReader.setContentHandler(new queryAnalysis_multiNaive());
 
         // Set an ErrorHandler before parsing
         xmlReader.setErrorHandler(new MyErrorHandler(System.err));

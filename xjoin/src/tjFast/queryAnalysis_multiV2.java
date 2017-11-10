@@ -41,10 +41,23 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             }
 //            System.out.println("getSolution:"+ myTables);
             generateValueIdPair generate = new generateValueIdPair();
+
+            //offline prepare all tag tables(value, id)
+            long generateTagMapStartTime = System.currentTimeMillis();
+            HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList);
+            long generateTagMapEndTime = System.currentTimeMillis();
+            long generateTagMapTime = generateTagMapEndTime - generateTagMapStartTime;
+
+            long startTime1 = System.currentTimeMillis();
+            myTables = getPCTables(tagMaps,myTables);
+            long endTime1 = System.currentTimeMillis();
+            System.out.println("getPC tables:"+(endTime1-startTime1));
             //divide p-c relation in xml to RDBs.
-            myTables = generate.generatePCVId(myTables);
+//            myTables = generate.generatePCVId(myTables);
             long endTime = System.currentTimeMillis();
-            System.out.println("divide p-c time:"+(endTime-beginTime));
+            System.out.println("generate tagMap time:"+(generateTagMapTime));
+            System.out.println("get xml table total time:"+(endTime-beginTime));
+            System.out.println("generate p-c xml tables time:"+(endTime-beginTime-generateTagMapTime));
 
             beginTime = System.currentTimeMillis();
             //read RDB files, add rdb_tables to myTables.
@@ -57,6 +70,7 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             System.out.println("merge tables");
             List<Vector> myResult = mergeTable(tagList);
             tjFastTable =  myResult;
+            System.out.println("tjFastTable size:"+tjFastTable.size());
             endTime = System.currentTimeMillis();
             System.out.println("sort table time:"+totalSortTableTime);
             System.out.println("merge Table time:"+(endTime-beginTime-totalSortTableTime));
@@ -68,6 +82,78 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         }
 
     }
+
+    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
+    public int compareId(int[] id1, int[] id2){
+        int compareResult = 0;
+        //sizes are also need to be compared
+        int id1_size = id1.length;
+        int id2_size = id2.length;
+        int commonSize = id1_size;
+        if(id1_size > id2_size){
+            commonSize = id2_size;
+        }
+        for(int i=0; i< commonSize;i++){
+            if(id1[i] != id2[i]){
+                if(id1[i] > id2[i]){
+                    compareResult = 1;
+                }
+                else{
+                    compareResult = -1;
+                }
+                break;
+            }
+        }
+        if(compareResult == 0){
+            if(id1_size > id2_size) compareResult = 1;
+            else if(id1_size < id2_size) compareResult = -1;
+        }
+
+        return compareResult;
+    }
+
+    public List<List<Vector>> getPCTables(HashMap<String, List<Vector>> tagMaps, List<List<Vector>> myTables){
+        List<List<Vector>> pcTables = new ArrayList<>();
+        for(int tableCursor=0; tableCursor<myTables.size(); tableCursor++){
+            List<Vector> pcTable = new ArrayList<>();
+            Vector pc = myTables.get(tableCursor).get(0);
+            pcTable.add(pc);//first row indicates tag names.
+            if(pc.size() == 2){
+                //parent tag
+                String tag_p = pc.get(0).toString();
+                //children tag
+                String tag_c = pc.get(1).toString();
+                List<Vector> table_p = tagMaps.get(tag_p);
+                List<Vector> table_c = tagMaps.get(tag_c);
+                int p=0, c=0;
+                int p_size = table_p.size();
+                int c_size = table_c.size();
+                while(p != p_size && c != c_size){
+                    // 0: value, 1: id
+                    int[] p_id = (int[])table_p.get(p).get(1);
+                    int[] c_id = (int[])table_c.get(c).get(1);
+                    int compResult = compareId(p_id, Arrays.copyOf(c_id, c_id.length-1));
+                    //if equals
+                    if(compResult == 0){
+                        Vector v = new Vector();
+                        v.addAll(Arrays.asList(table_p.get(p).get(0).toString(), p_id, table_c.get(c).get(0).toString(),c_id));
+                        pcTable.add(v);
+                        p++;
+                        c++;
+                    }
+                    else if(compResult > 0) c++;
+                    else p++;
+                }
+            }
+            //only one tag, no pc relation
+            else{
+                pcTable.addAll(tagMaps.get(pc.get(0)));
+            }
+            pcTables.add(pcTable);
+        }
+        return pcTables;
+    }
+
     public List<Vector> mergeTable(List<String> mergeOrder){
         List<Vector> myResult = new ArrayList<>();
         //add tag one by one to myResult
@@ -148,7 +234,6 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                         }
                 }
 
-
                 //if tablesToMerge does not have any common tag with Result list, add each key in tagHashMap to each row of the table
                 if(myResult.get(0).size() == order*2){//(1*2 = 2)
                     List<Vector> simulNewResult = new ArrayList<>();
@@ -174,9 +259,9 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
         List<Vector> myNewResult = new ArrayList<>();
         int[] rowCursor = new int[tablesToMergeOnAddedTag.size()+1];
         int myResultSize = myResult.size();
-        System.out.println("myResultSize:"+myResultSize);
+//        System.out.println("myResultSize:"+myResultSize);
         while(notEnd){
-            System.out.println("myResultRowCursor:"+rowCursor[0]);
+//            System.out.println("myResultRowCursor:"+rowCursor[0]);
             //any one of the tables has gone to the end
             if(rowCursor[0]==myResultSize || isEnd(tablesToMergeOnAddedTag,rowCursor)){
                 break;
@@ -225,8 +310,11 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
                 //else myResult has addTag to join
                 else{
                     //sort part table on addTag
+                    long time1 = System.currentTimeMillis();
                     Collections.sort(partResultRows,new MyComparator(Arrays.asList(orgRowSize)));
                     Collections.sort(mergeTableRows,new MyComparator(Arrays.asList(addedTagColumn.get(0).get(1))));
+                    long time2 = System.currentTimeMillis();
+                    totalSortTableTime += time2 - time1;
                     int i=0, j=0;
                     while(i != partResultRows.size() && j != mergeTableRows.size()){
                         Vector partResultRow = partResultRows.get(i);
@@ -278,39 +366,12 @@ public class queryAnalysis_multiV2 extends DefaultHandler{
             //else move the table which value is minimal
             else rowCursor[compareResult] = rowCursor[compareResult]+1;
         }
-        System.out.println("myNewResultSize:"+myNewResult.size());
+//        System.out.println("myNewResultSize:"+myNewResult.size());
         return myNewResult;
     }
 
 
-//    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
-//    public int compareId(int[] id1, int[] id2){
-//        int compareResult = 0;
-//        //sizes are also need to be compared
-//        int id1_size = id1.length;
-//        int id2_size = id2.length;
-//        int commonSize = id1_size;
-//        if(id1_size > id2_size){
-//            commonSize = id2_size;
-//        }
-//        for(int i=0; i< commonSize;i++){
-//            if(id1[i] != id2[i]){
-//                if(id1[i] > id2[i]){
-//                    compareResult = 1;
-//                }
-//                else{
-//                    compareResult = -1;
-//                }
-//                break;
-//            }
-//        }
-//        if(compareResult == 0){
-//            if(id1_size > id2_size) compareResult = 1;
-//            else if(id1_size < id2_size) compareResult = -1;
-//        }
-//
-//        return compareResult;
-//    }
+
 
 
 

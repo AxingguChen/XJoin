@@ -40,8 +40,9 @@ public class queryAnalysis_multiV2BackUp extends DefaultHandler{
             }
 //            System.out.println("getSolution:"+ myTables);
             generateValueIdPair generate = new generateValueIdPair();
-            //divide p-c relation in xml to RDBs.
-            myTables = generate.generatePCVId(myTables);
+            //divide p-c relation in xml to RDBs.@@@
+
+//            myTables = generate.generatePCVId(myTables);
             long endTime = System.currentTimeMillis();
             System.out.println("divide p-c time:"+(endTime-beginTime));
 

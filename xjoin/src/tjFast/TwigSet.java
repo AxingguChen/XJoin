@@ -286,6 +286,91 @@ public class TwigSet {
 
     }//end  beginJoin()
 
+
+
+    void beginJoin_naiveMulti(List<HashMap<String, String>> allTagIDValue) throws Exception{
+        System.out.println("begin join");
+        List<List<String>> idList_all = new ArrayList<>();
+        //�������ڲ���
+        /*for(int i=0;i<leaves.size();i++)
+		{ String leave = (String)leaves.elementAt(i);
+      boolean match  = lazyMatching.checkApproximateMatching(leave,allData,pathpatterns,dataCursor);
+      System.out.println("match is "+match);
+		}*/
+
+        //�������ڲ���
+
+        long begintime = System.currentTimeMillis();
+        Vector leaves = Query.getLeaves();
+        for (int i = 0; i < leaves.size(); i++) {
+            String s = (String) leaves.elementAt(i);
+            locateMatchedLabel(s);
+        }//end for
+
+
+        while (numberOfFinishedLeaves != numberOfleaves) { //��ʾstreamû�н���
+
+            String qact;
+
+            if (leaves.size() == 1)
+                qact = (String) leaves.elementAt(0);
+            else
+                qact = getNext(Query.getRoot());
+
+            //utilities.DebugPrintln("return leaf is "+qact);
+
+            if (leaves.size() > 1) {
+                outputSolutions(qact);
+                //System.out.println("qact "+qact);
+            }
+            advanceStream(qact);
+
+
+            locateMatchedLabel(qact);
+        }//end while
+
+        if (leaves.size() > 1)
+            emptySets();
+
+        long endtime;
+        //////
+        //System.out.println(" Total CPU time is "+ (endtime-begintime)+" ms.");
+        System.out.println("Merge");
+        if (leaves.size() > 1) {
+            System.out.println(" Number of path solutions(points count) is " + numberOfSolutions);
+            if (numberOfSolutions > 0) {
+                if (Query.getBranchNode().length == 1){
+                    //merge solution
+                    List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeOneBranch_naive(finalResults);
+                    endtime = System.currentTimeMillis();
+                    System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
+                    //get solution pair value
+                    naiveMethod naive = new naiveMethod();
+                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println("Final solution number is:"+result);
+                }
+                else{
+                    //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
+                    List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeTwoBranchs_naiveDouble(finalResults);
+                    System.out.println("solution pair number is:"+solutionPairIDList.size());
+                    endtime = System.currentTimeMillis();
+                    System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
+                    //get solution pair value
+                    naiveMethod_multi naive = new naiveMethod_multi();
+                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println("Final solution number is:"+result);
+                }
+                //System.out.println("final result:"+finalResults.get("b"));
+                //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));
+
+                //System.out.println(showAllPathSolutions());
+            }
+        }//end if (leaves.size() > 1)
+
+    }//end  beginJoin()
+
+
+
     void printPathSolutions() {
         for (int i = 0; i < numberOfleaves; i++) {
             String s = (String) leaves.elementAt(i);

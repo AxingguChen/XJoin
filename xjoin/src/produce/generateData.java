@@ -12,10 +12,11 @@ import java.util.Random;
 public class generateData {
 
     public static void buildRDBValue() throws  Exception{
-        PrintWriter pw = new PrintWriter(new File("xjoin/src/multi_rbds/testTables/test.csv"));
+        PrintWriter pw = new PrintWriter(new File("xjoin/src/multi_rdbs/testTables/test.csv"));
         StringBuilder sb = new StringBuilder();
         Random rand = new Random();
-        for(int i=0; i<10000; i++){
+        // 1 million
+        for(int i=0; i<1000000; i++){
             sb.append(rand.nextInt(50)+"");
             sb.append(',');
             sb.append(rand.nextInt(50)+"");
