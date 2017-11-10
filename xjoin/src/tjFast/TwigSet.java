@@ -346,8 +346,7 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod naive = new naiveMethod();
-                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
-                    System.out.println("Final solution number is:"+result);
+                    naive.getResult(solutionPairIDList,allTagIDValue);
                 }
                 else{
                     //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
@@ -357,8 +356,7 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod_multi naive = new naiveMethod_multi();
-                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
-                    System.out.println("Final solution number is:"+result);
+                    naive.getResult(solutionPairIDList,allTagIDValue);
                 }
                 //System.out.println("final result:"+finalResults.get("b"));
                 //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));

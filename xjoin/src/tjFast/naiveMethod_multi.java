@@ -8,6 +8,7 @@ import java.util.*;
  */
 public class naiveMethod_multi {
     static int readRDBcount = 0;
+    static long sortTableTime = 0L;
     static List<List<List<String>>> myTables = new ArrayList<>();
     //get xml value,id pair list
     public List<List<String>> getValuePair(List<List<String>> pairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception {
@@ -20,8 +21,7 @@ public class naiveMethod_multi {
                 //the tag order is the same when load allTagIDValue
                 String id = p.get(i);
                 String value = allTagIDValue.get(i).get(id);
-                valueIDList.add(value);
-                valueIDList.add(id);
+                valueIDList.add(value);//do not need id anymore
             }
 
             resultList.add(valueIDList);
@@ -90,7 +90,6 @@ public class naiveMethod_multi {
                         //                    if()
                         for(String s:values){
                             vec.add(s);
-                            vec.add(null);
                         }
                     }
 //                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
@@ -105,58 +104,93 @@ public class naiveMethod_multi {
     }
 
 
-    public List<List<String>> joinValue(List<List<String>> xmlList, List<List<String>> rdbValue){
-        int i=0; int j = 0;
-        List<List<String>> joinList = new ArrayList<>();
-        //i -> row number of rdb table, j-> row number of xmlList
-        while(i != rdbValue.size() && j != xmlList.size()){
-            //get the first column value of rdb table
-            String table_value = rdbValue.get(i).get(0);
-            // odd-value, even-id. 0 is value
-            String xml_value = xmlList.get(j).get(0);
-//            if(j == 5140){
-//
-//                System.out.println();
-//            }
-//
-//            if(j==35473){
-//
-//                System.out.println();
-//            }
-//            if(xmlList.get(j).get(5).equals("/1/144/1")){
-//
-//                System.out.println();
-//            }
-            int compare_result = table_value.compareTo(xml_value);
-            if (compare_result == 0) { //equals
-                Boolean flag = true;
-                for(int tagCursor=1;tagCursor<rdbValue.get(i).size();tagCursor++){
-                    //get the first column value of rdb table
-                    String table_nextValue = rdbValue.get(i).get(tagCursor);
-                    // odd-value, even-id. 0 is value
-                    String xml_nextValue = xmlList.get(j).get(tagCursor*2);
 
-                    int compare = table_nextValue.compareTo(xml_nextValue);
-                    flag = ((compare==0)&&flag);
-                    if(compare<0) {i++;break;}
-                    else if(compare >0) {j++;break;}
+    public void joinTables(List<List<String>> xmlTable, List<List<List<String>>> rdbTables){
+        List<List<String>> finalResult = new ArrayList<>();
+        List<String> xmlTagList = Arrays.asList("asin","price","OrderId");
+        //join each rdbTable with xmlTable
+        for(List<List<String>> rdbTable: rdbTables){
+            List<String> rdbTags = rdbTable.get(0);
+            List<Integer> xmlColumNos = new ArrayList<>();
+            List<Integer> rdbColumNos = new ArrayList<>();
+
+            //find tag column in rdb/xml tables
+            for(int xmlTag=0; xmlTag<xmlTagList.size(); xmlTag++){
+                for(int rdbTag=0; rdbTag<rdbTags.size(); rdbTag++){
+                    if(xmlTagList.get(xmlTag).equals(rdbTags.get(rdbTag))){
+                        xmlColumNos.add(xmlTag);
+                        rdbColumNos.add(rdbTag);
+                    }
                 }
-                //if match successfully, move xml cursor to next row
-                if(flag==true){
-                    joinList.add(xmlList.get(j));
-                    j++;}
+            }
 
-            }
-            else if (compare_result < 0){ // table_value < tag_value
-                i++;
-            }
-            else if(compare_result > 0){ // table_value > tag_value
-                //xmlList.remove(j);
-                j++;
+            //sort tables to join
+            long sortBeginTime = System.currentTimeMillis();
+            Collections.sort(rdbTable,new MyComparator(rdbColumNos));
+            Collections.sort(xmlTable,new MyComparator(xmlColumNos));
+            long sortEndTime = System.currentTimeMillis();
+            sortTableTime += sortEndTime - sortBeginTime;
+            //join tables
+            Boolean notEnd = true;
+            int xmlRow =0, rdbRow =0;
+            while(notEnd){
+                //any one of the tables has gone to the end
+                if(xmlRow==xmlTable.size() || rdbRow ==rdbTable.size()){
+                    break;
+                }
+                List<String> xmlTableRow = xmlTable.get(xmlRow);
+                List<String> rdbTableRow = rdbTable.get(rdbRow);
+                //tagValues is to store current row values from tables
+                String xmlValue = xmlTableRow.get(xmlColumNos.get(0));
+                String rdbValue = rdbTableRow.get(rdbColumNos.get(0));
+                int compareResult = xmlValue.compareTo(rdbValue);
+
+                //equals
+                if(compareResult == 0){
+                    String xmlTableNextValue = xmlTableRow.get(xmlColumNos.get(1));
+                    String rdbTableNextValue = rdbTableRow.get(rdbColumNos.get(1));
+                    int compare = xmlTableNextValue.compareTo(rdbTableNextValue);
+                    if(compare==0) {
+                        finalResult.add(xmlTableRow);
+                        //@@@@@@@@@@@ may lose correct answers here
+                        if(rdbRow+1 != rdbTable.size()) rdbRow++;
+                        else xmlRow++;
+                    }
+                    else if(compare <0) xmlRow++;
+                    else rdbRow++;
+                }
+                else if(compareResult < 0) xmlRow++;
+                else rdbRow++;
             }
         }
-        return joinList;
+        System.out.println("final result size:"+finalResult.size());
     }
+
+
+    //compare by column numbers one by one
+    public class MyComparator implements Comparator<List<String>> {
+        List<Integer> columnNos;
+        public MyComparator(List<Integer> columnNos) {
+            this.columnNos = columnNos;
+        }
+        @Override
+        public int compare(List<String> l1, List<String> l2){
+            int result = 0;
+            for(int i=0; i<columnNos.size(); i++){
+
+                int compa = (l1.get((int)columnNos.get(i)).toString()).compareTo(l2.get((int)columnNos.get(i)).toString());
+                if(compa < 0){
+                    result = -1;
+                    break;
+                }
+                else if(compa == 0)
+                    result = 0;
+                else {result = 1;break;}
+            }
+            return result;
+        }
+    }
+
 
     public int getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
         //rdb table
@@ -167,51 +201,12 @@ public class naiveMethod_multi {
         leaves.add(leaves.get(0));
         leaves.remove(0);
 
-//        //List<String> leaves = A
         long loadRDBbeginTime = System.currentTimeMillis();
         readRDB();
         List<List<List<String>>> rdbValue = myTables;
-////        //List<List<String>> rdbValue = buildRDBValue(leaves);
         long loadRDBendTime = System.currentTimeMillis();
-        System.out.println("load rdb table data time is " + (loadRDBendTime - loadRDBbeginTime));
+        System.out.println("load rdb table data time is: " + (loadRDBendTime - loadRDBbeginTime));
 
-
-//        //sort
-//        long sortRDBbeginTime = System.currentTimeMillis();
-//        Collections.sort(rdbValue,new Comparator<List<String>>(){
-//            public int compare(List<String> l1, List<String> l2){
-//                int length = l1.size();
-//                int result = 0;
-//                for(int i=0; i<length; i++){
-//                    int compa = (l1.get(i)).compareTo(l2.get(i));
-//                    if(compa < 0){
-//                        result = -1;
-//                        break;
-//                    }
-//                    else if(compa == 0)
-//                        result = 0;
-//                    else {result = 1;break;}
-//                }
-//                return result;
-//            }}
-//        );
-//        long sortRDBendTime = System.currentTimeMillis();
-//        System.out.println("sort rdb data time is " + (sortRDBendTime - sortRDBbeginTime));
-//        System.out.println("rdbValue:"+rdbValue.size());
-
-//        try {
-//            for(List<String> l:rdbValue){
-//
-//                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/rdbValue.txt",true));
-//                out.write(l+"\r\n");  //Replace with the string
-//                //you are trying to write
-//                out.close();
-//            }}
-//        catch (IOException e)
-//        {
-//            System.out.println("Exception ");
-//
-//        }
         //XML
         //load
         long loadbeginTime = System.currentTimeMillis();
@@ -221,94 +216,23 @@ public class naiveMethod_multi {
         ADDouble.add(allTagIDValue.get(1));
         ADDouble.add(allTagIDValue.get(2));
         ADDouble.add(allTagIDValue.get(0));
-        List<List<String>> xmlList = getValuePair(solutionPairIDList,ADDouble);
-//        List<List<String>> xmlList = getValuePair(solutionPairIDList,allTagIDValue);
+//        List<List<String>> xmlList = getValuePair(solutionPairIDList,ADDouble);
+        List<List<String>> xmlList = getValuePair(solutionPairIDList,allTagIDValue);
         long loadendTime = System.currentTimeMillis();
         System.out.println("Find xml value by id time is " + (loadendTime - loadbeginTime));
-        System.out.println("xml List. get(0):"+xmlList.get(0));
-        System.out.println("xml List. get(1):"+xmlList.get(1));
-        System.out.println("xml List. get(2):"+xmlList.get(2));
-        //sort value pair list according to the first value of each pair
-        long sortbeginTime = System.currentTimeMillis();
-        Collections.sort(xmlList,new Comparator<List<String>>(){
-            public int compare(List<String> l1, List<String> l2){
-                int length = l1.size();
-                int result = 0;
-                for(int i=0; i<length ; i=i+2){
-//                    System.out.println("i:"+i);
-//                    System.out.println("L1:"+l1.get(i)+",L2:"+l2.get(i));
-                    int compa = (l1.get(i)).compareTo(l2.get(i));
-//                    System.out.println(compa);
-                    if(compa < 0){
-                        result = -1;
-                        break;
-                    }
-                    else if(compa == 0)
-                        result = 0;
-                    else {result = 1;break;}
-                }
-                return result;
-            }}
-        );
-        long sortendTime = System.currentTimeMillis();
-        System.out.println("sort xml data time is " + (sortendTime - sortbeginTime));
-        System.out.println("xmlList:"+xmlList.size());
+
+//        System.out.println("xml List. get(0):"+xmlList.get(0));
+//        System.out.println("xml List. get(1):"+xmlList.get(1));
+//        System.out.println("xml List. get(2):"+xmlList.get(2));
 
 
-
+        //join table time
         long joinbegintime = System.currentTimeMillis();
-//        List<List<String>> resultList = joinValue(xmlList,rdbValue);
+        joinTables(xmlList,rdbValue );
         long joinendtime = System.currentTimeMillis();
-        System.out.println("join xml&rdb data time is " + (joinendtime - joinbegintime));
-
-//        System.out.println(resultList);
-
-        //System.out.println("final result:"+resultList);
-        //following code is to test if all the result is exist in rdb table
-//        Boolean exsit = false;
-//        Boolean res = true;
-//        for(List<String> l:xmlList){
-//            String asin = l.get(0);
-//            for(List<String> s:rdbValue){
-//                String tableAsin = s.get(0);
-//                if(asin.equals(tableAsin)){
-//                    exsit = true;
-//                    break;
-//                }
-//                else exsit=false;
-//            }
-//            res = (res && exsit);
-//        }
-//        System.out.println("correct or not?"+res);
-//        try {
-//            for(List<String> l:resultList){
-//
-//                BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/naiveResult.txt",true));
-//                out.write(l+"\r\n");  //Replace with the string
-//                //you are trying to write
-//                out.close();
-//            }}
-//            catch (IOException e)
-//            {
-//                System.out.println("Exception ");
-//
-//            }
-
-//        try (BufferedReader br = new BufferedReader(new FileReader("xjoin/src/xjoinDoubleLayerResultCountFull.txt"))) {
-//
-//            String sCurrentLine;
-//
-//            while ((sCurrentLine = br.readLine()) != null) {
-//                String line = sCurrentLine.split(",")[1];
-//
-//            }
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
-
-
+        System.out.println("sort table time is: "+ sortTableTime);
+        System.out.println("only join xml&rdb time is: " + (joinendtime - joinbegintime-sortTableTime));
+        System.out.println("total join xml&rdb time is: " + (joinendtime - joinbegintime));
         return 0;
     }
 
