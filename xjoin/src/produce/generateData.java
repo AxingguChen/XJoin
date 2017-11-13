@@ -16,7 +16,7 @@ public class generateData {
         StringBuilder sb = new StringBuilder();
         Random rand = new Random();
         // 1 million
-        for(int i=0; i<1000000; i++){
+        for(int i=0; i<10000; i++){
             sb.append(rand.nextInt(50)+"");
             sb.append(',');
             sb.append(rand.nextInt(50)+"");
