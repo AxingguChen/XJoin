@@ -1,6 +1,7 @@
 package tjFast;
 
 import org.xml.sax.*;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -13,7 +14,24 @@ import java.util.*;
 /**
  * Created by zzzhou on 2017-11-13.
  */
-public class queryAnaylsis_bothMulti {
+public class queryAnaylsis_bothMulti  extends DefaultHandler {
+    Hashtable twigTagNames;
+
+    static String filename;
+
+    String ROOT;
+
+    Stack TagStack;
+    static long totalSortTableTime = 0L;
+
+    static String basicDocuemnt;
+    static List<List<Vector>> myTables = new ArrayList<>();
+    static List<Vector> tjFastTable = new ArrayList<>();
+    static Set<String> xmlRelationTagSet = new HashSet<>();
+
+
+
+
     static public void main(String[] args) throws Exception {
         //filename = args[0];
         filename = "xjoin/src/tjFast/simplePathPattern.xml";
