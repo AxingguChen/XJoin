@@ -43,7 +43,7 @@ public class queryAnalysis_multi extends DefaultHandler{
 
             //offline prepare all tag tables(value, id)
             long generateTagMapStartTime = System.currentTimeMillis();
-            HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList);
+            HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
             long generateTagMapEndTime = System.currentTimeMillis();
             long generateTagMapTime = generateTagMapEndTime - generateTagMapStartTime;
 
@@ -323,39 +323,19 @@ public class queryAnalysis_multi extends DefaultHandler{
                         String joinAddTagValue = partJoinTableRow.get(addedTagColumn.get(0).get(1)).toString();
                         int compare_result = resultAddTagValue.compareTo(joinAddTagValue);
                         if(compare_result == 0){
-                            //we do not need to check if tagHashMap contains the key again.
-//                            if(tagHashMap.containsKey(resultAddTagValue)){
-//                                myNewResult.add(partResultRow);
-//                            }
                             myNewResult.add(partResultRow);
                             if((j+1)!=mergeTableRows.size()){
                                 j++;
                             }
                             else i++;
-
-//                            //@@@@@@@@@ equals still need to take all the common values and maybe compare next value
-//                            // move until next value is not common
-//                            //@@@@@@@@@ after getting two id_lists, you need to compare their ids. If id occurs in two lists, add it to result, otherwise, will not.
-//                            Vector v_j = moveCursorUntilNewValue(mergeTableRows, j, addedTagColumn.get(0).get(1), resultAddTagValue);
-//                            Vector v_r = moveCursorUntilNewValue(partResultRows, i, resultColumn, resultAddTagValue);
-//                            //take row numbers from this two vectors
-//                            rowCursor[1] = (int)v_j.get(0);
-////                            List<int[]> ids_j = (List<int[]>) v_j.get(1);
-//                            rowCursor[0] = (int)v_r.get(0);
-////                            List<int[]> ids_r = (List<int[]>) v_r.get(1);
-////                            //find common ids
-////                            List<int[]> commonIds = getCommonIds(ids_j, ids_r);
-
                         }
                         else if(compare_result > 0){
-//                            rowCursor[1]++;
                             j++;
                         }
                         else{
                             if (i != partResultRows.size() && i > 0 && resultAddTagValue.equals(partResultRows.get(i-1).get(orgRowSize).toString())) {
                                 myNewResult.add(partResultRow);
                             }
-//                            rowCursor[0]++;
                             i++;
                         }
                     }
@@ -760,10 +740,6 @@ public class queryAnalysis_multi extends DefaultHandler{
             String message = "Fatal Error: " + getParseExceptionInfo(spe);
             throw new SAXException(message);
         }
-
-        public void excepError() throws  Exception{
-            out.println("Exception");
-        }
     }
     /**
      * Convert from a filename to a file URL.
@@ -896,12 +872,6 @@ public class queryAnalysis_multi extends DefaultHandler{
                 tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
             }
 
-//            List<Vector> re = lm.getSolution(tagList); // get xml value match table result
-            // start to calculate the running time
-            //long totalbeginTime = System.currentTimeMillis();
-            //long tjFastbeginTime = System.currentTimeMillis();
-            //long tjFastbyAddTime = 0L;
-            //System.out.println("start multi-times tjFast");
             int solutionCount = 0;
 
             //produce tjFast leaves table
@@ -912,23 +882,10 @@ public class queryAnalysis_multi extends DefaultHandler{
                 tjFastData.add(v1);
             }
 
-//            for(int i = 0;i<100;i++){
-//                part0.add(o[0].get(i));
-//                part1.add(o[1].get(i));
-//            }
-//            Vector partO[] = new Vector[2];
-//            partO[0] = part0;
-//            partO[1] = part1;
             for(int i=0;i<tjFastData.size();i++) {
                 long loadbeginTime = System.currentTimeMillis();
                 Hashtable[] alldata = d.loadAllLeafData(tjFastData.get(i), DTDInfor,tagList);
 
-                //for double layer query only
-//                alldata[0].put(tagList.get(2),partO[0]);
-//                alldata[1].put(tagList.get(2), partO[1]);
-
-//                alldata[0].put(tagList.get(2),o[0]);
-//                alldata[1].put(tagList.get(2), o[1]);
                 //System.out.println("Query leaves:" + Query.getLeaves());
 
 //                System.out.println("i:"+i);
