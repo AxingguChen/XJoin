@@ -195,7 +195,7 @@ public class generateValueIdPair extends DefaultHandler {
         //filename = args[0];
 
 //        filename = "xjoin/src/test.xml";
-        filename = "xjoin/src/multi_rdbs/Invoice.xml";
+//        filename = "xjoin/src/multi_rdbs/Invoice.xml";
         if (filename == null) {
             usage();
         }
@@ -223,16 +223,17 @@ public class generateValueIdPair extends DefaultHandler {
         System.out.println("End of document Analysis");
     }
 
-    public HashMap<String, List<Vector>> generateTagVId(List<String> tagLists) throws Exception {
+    public HashMap<String, List<Vector>> generateTagVId(List<String> tagLists, String xmlFileName) throws Exception {
+        filename =  xmlFileName;
 
-            generateValueIdPair g = new generateValueIdPair();
-            tagList = tagLists;
-            for(String tag:tagLists){
-                tagMaps.put(tag, new ArrayList<>());
-            }
-            //Analysis the XML tree and add value-id pair to pcTables
-            g.doAnalysis();
-            return tagMaps;
+        generateValueIdPair g = new generateValueIdPair();
+        tagList = tagLists;
+        for(String tag:tagLists){
+            tagMaps.put(tag, new ArrayList<>());
+        }
+        //Analysis the XML tree and add value-id pair to pcTables
+        g.doAnalysis();
+        return tagMaps;
     }
 
     static public void main(String[] args) throws Exception {
