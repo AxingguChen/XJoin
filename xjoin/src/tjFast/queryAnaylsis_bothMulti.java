@@ -145,9 +145,11 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
         //Analysis queries to get pc relations
         File folder = new File("xjoin/src/multi_rdbs/queries/");
         basicDocuemnt = "xjoin/src/multi_rdbs/Invoice.xml";
+        List<List<Vector>> allTables = new ArrayList<>();
         //add-order
         List<String> tagList = Arrays.asList("a","b","c","d","e");
-
+        generateValueIdPair generate = new generateValueIdPair();
+        //read query file
         File[] listOfFiles = folder.listFiles();
         for (File file : listOfFiles) {
             if (file.isFile()) {
@@ -163,8 +165,14 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                         myTables.add(l);
                     }
                 }
+                HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
+
+                allTags.clear();
+                myTables.clear();
             }
         }
+        myTables = allTables;
+        System.out.println();
         //get pc tables, read RDB and join tables
 //        getSolution();
 
