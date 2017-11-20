@@ -60,12 +60,24 @@ public class test {
         }
     }
 
+
     static public void main(String[] args){
-       int[] a = {1,1,2};
-       int[] b = {1,1};
-       int[] c = {1,1};
-       List<int[]> idList = new ArrayList<>(Arrays.asList(a,b,c));
-       int i = compareIds(idList);
-       System.out.println(i);
+
+            String str[] = { "A", "B", "C"};
+
+            int nCnt = str.length;
+
+            //right shift, divide
+            int nBit = (0xFFFFFFFF >>> (32 - nCnt));
+
+            for (int i = 1; i <= nBit; i++) {
+                for (int j = 0; j < nCnt; j++) {
+                    if ((i << (31 - j)) >> 31 == -1) {
+                        System.out.print(str[j]);
+                    }
+                }
+                System.out.println("");
+            }
+
     }
 }
