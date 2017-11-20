@@ -5,8 +5,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 import produce.generateValueIdPair;
 
@@ -142,42 +141,254 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
 
 
     public void getSolution() throws Exception{
+
         //Analysis queries to get pc relations
-        File folder = new File("xjoin/src/multi_rdbs/queries/");
-        basicDocuemnt = "xjoin/src/multi_rdbs/Invoice.xml";
-        List<List<Vector>> allTables = new ArrayList<>();
+        File queryFolder = new File("xjoin/src/multi_rdbs/queries/");
+        File basicDocumnetFolder = new File("xjoin/src/multi_rdbs/invoices/");
+
         //add-order
         List<String> tagList = Arrays.asList("a","b","c","d","e");
         generateValueIdPair generate = new generateValueIdPair();
         //read query file
-        File[] listOfFiles = folder.listFiles();
-        for (File file : listOfFiles) {
-            if (file.isFile()) {
-                System.out.println(file);
-                analysisQuery(file.getPath());
-                for(String s:tagList){
+        File[] listOfFiles_query = queryFolder.listFiles();
+        File[] listOfFiles_document = basicDocumnetFolder.listFiles();
+
+        if( listOfFiles_query.length != listOfFiles_document.length){
+            System.out.println("please check query and basic document files. Their sizes are not same.");
+            return;
+        }
+        for (int i=0; i<listOfFiles_query.length; i++) {
+            File queryFile = listOfFiles_query[i];
+            File documentFile = listOfFiles_document[i];
+            basicDocuemnt = documentFile.getPath();
+            List<String> currentTagList = new ArrayList<>();
+            if (queryFile.isFile() && documentFile.isFile()) {
+                //analysis query
+                analysisQuery(queryFile.getPath());
+                for(String s:tagList) {
                     //xmlRelationTagSet -> pc relations
-                    if(! xmlRelationTagSet.contains(s) && allTags.contains(s)){
-                        Vector v = new Vector();
-                        List<Vector> l = new ArrayList<>();
-                        v.add(s);
-                        l.add(v);
-                        myTables.add(l);
+                    if (allTags.contains(s)) {
+                        //check tags in tagList contained in allTags in current query file
+                        currentTagList.add(s);
+                        if (!xmlRelationTagSet.contains(s)) {
+                            Vector v = new Vector();
+                            List<Vector> l = new ArrayList<>();
+                            v.add(s);
+                            l.add(v);
+                            myTables.add(l);
+                        }
                     }
                 }
-                HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
 
+                //analysis basic document
+                HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(currentTagList,basicDocuemnt);
+
+                myTables = getPCTables(tagMaps,myTables);
+
+                //read RDB files, add rdb_tables to myTables.
+                if(i==0){
+                    System.out.println("read RDB");
+                    readRDB();
+                }
+
+                //join tables
+//                joinTables();
+
+                //Verify query structure, multi-tjFast
                 allTags.clear();
                 myTables.clear();
+                xmlRelationTagSet.clear();
             }
         }
-        myTables = allTables;
-        System.out.println();
-        //get pc tables, read RDB and join tables
-//        getSolution();
 
-        //Verify query structure, multi-tjFast
     }
+
+    public void joinTables(List<String> tagList, List<List<Vector>> tables) {
+        //join order
+        for(int joinOrder=0; joinOrder<tagList.size(); joinOrder++){
+            String addTag = tagList.get(joinOrder);
+            System.out.println("add tag:"+addTag);
+            //column numbers of addTag in tables
+            List<Integer> tableColumns = new ArrayList<>();
+            //tables that contains addTag
+            List<List<Vector>> tablesToMerge = new ArrayList<>();
+            //first row(table tags name) of tablesToMerge
+            List<Vector> tableTags = new ArrayList<>();
+            //####add tables that contains current add-tag to a list(tablesToMerge)#####
+            for(List<Vector> table:tables){
+                Vector tagVector = table.get(0);
+                if(tagVector.contains(addTag)){
+                    int table_column = getColumn(tagVector,addTag);
+                    //Vector in table is [v,id,v,id,...] except the first row. "*2" -> value
+                    tableColumns.add(table_column*2);
+                    //remove first row of table since the first row is the names of tags, and table needs to be sorted later.
+                    List<Vector> table_removeFirstRow = table.subList(1,table.size());
+                    //sort table by addTag
+                    long time1 = System.currentTimeMillis();
+                    Collections.sort(table_removeFirstRow,new MyComparator(Arrays.asList(table_column*2)));
+                    long time2 = System.currentTimeMillis();
+                    totalSortTableTime += time2 -time1;
+                    //add table that contains addTag to list
+                    tablesToMerge.add(table_removeFirstRow);
+                    //add first row of table(table tag names) to a list, since we need to check tables' other tags later.
+                    tableTags.add(tagVector);
+                }
+            }
+
+            //join add_tag with join_result
+
+
+        }
+    }
+
+    public void getJoinedTagComb(List<String> tagList, int curTagNo){
+        List<List<String>> joinedTagComb = new ArrayList<>();
+
+        List<String> joinedTag = tagList.subList(0,curTagNo);
+        for(int i=0; i<joinedTag.size(); i++){
+            List<String> comTags = null;
+        }
+    }
+
+    //compare by column numbers one by one
+    public class MyComparator implements Comparator<Vector> {
+        List<Integer> columnNos;
+        public MyComparator(List<Integer> columnNos) {
+            this.columnNos = columnNos;
+        }
+        @Override
+        public int compare(Vector l1, Vector l2){
+            int result = 0;
+            for(int i=0; i<columnNos.size(); i++){
+
+                int compa = (l1.get((int)columnNos.get(i)).toString()).compareTo(l2.get((int)columnNos.get(i)).toString());
+                if(compa < 0){
+                    result = -1;
+                    break;
+                }
+                else if(compa == 0)
+                    result = 0;
+                else {result = 1;break;}
+            }
+            return result;
+        }
+    }
+    //get the column number of current table, may be replaced by e.g.[0,0,1,0,1]
+    public int getColumn(Vector v, String tag){
+        for(int i=0;i<v.size();i++){
+            if(v.get(i).toString().equals(tag)){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    //read RDB value and merge list to myTables.
+    public void readRDB() throws Exception{
+        File directory = new File("xjoin/src/multi_rdbs/testTables");
+        for(File f: directory.listFiles()){
+            String line = "";
+            Boolean firstLine = true;
+            List<Vector> rdb = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                while ((line = br.readLine()) != null) {
+                    Vector vec = new Vector();
+                    if(firstLine){
+                        vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));
+                        firstLine = false;
+                    }
+                    else{
+                        String[] values = line.split("\\s*,\\s*");
+                        //                    if()
+                        for(String s:values){
+                            vec.add(s);
+                            vec.add(null);
+                        }
+                    }
+//                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
+                    rdb.add(vec);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+            myTables.add(rdb);
+        }
+    }
+
+    public List<List<Vector>> getPCTables(HashMap<String, List<Vector>> tagMaps, List<List<Vector>> myTables){
+        List<List<Vector>> pcTables = new ArrayList<>();
+        for(int tableCursor=0; tableCursor<myTables.size(); tableCursor++){
+            List<Vector> pcTable = new ArrayList<>();
+            Vector pc = myTables.get(tableCursor).get(0);
+            pcTable.add(pc);//first row indicates tag names.
+            if(pc.size() == 2){
+                //parent tag
+                String tag_p = pc.get(0).toString();
+                //children tag
+                String tag_c = pc.get(1).toString();
+                List<Vector> table_p = tagMaps.get(tag_p);
+                List<Vector> table_c = tagMaps.get(tag_c);
+                int p=0, c=0;
+                int p_size = table_p.size();
+                int c_size = table_c.size();
+                while(p != p_size && c != c_size){
+                    // 0: value, 1: id
+                    int[] p_id = (int[])table_p.get(p).get(1);
+                    int[] c_id = (int[])table_c.get(c).get(1);
+                    int compResult = compareId(p_id, Arrays.copyOf(c_id, c_id.length-1));
+                    //if equals
+                    if(compResult == 0){
+                        Vector v = new Vector();
+                        //do not need to reserve place to store other queries' id_list, since structure will be checked right after analysis each query.
+                        v.addAll(Arrays.asList(table_p.get(p).get(0).toString(), p_id, table_c.get(c).get(0).toString(),c_id));
+                        pcTable.add(v);
+                        p++;
+                        c++;
+                    }
+                    else if(compResult > 0) c++;
+                    else p++;
+                }
+            }
+            //only one tag, no pc relation
+            else{
+                pcTable.addAll(tagMaps.get(pc.get(0)));
+            }
+            pcTables.add(pcTable);
+        }
+        return pcTables;
+    }
+
+    //Return 0 -> equals. Return 1 -> id1 > id2. Return -1, id1 < id2
+    public int compareId(int[] id1, int[] id2){
+        int compareResult = 0;
+        //sizes are also need to be compared
+        int id1_size = id1.length;
+        int id2_size = id2.length;
+        int commonSize = id1_size;
+        if(id1_size > id2_size){
+            commonSize = id2_size;
+        }
+        for(int i=0; i< commonSize;i++){
+            if(id1[i] != id2[i]){
+                if(id1[i] > id2[i]){
+                    compareResult = 1;
+                }
+                else{
+                    compareResult = -1;
+                }
+                break;
+            }
+        }
+        if(compareResult == 0){
+            if(id1_size > id2_size) compareResult = 1;
+            else if(id1_size < id2_size) compareResult = -1;
+        }
+
+        return compareResult;
+    }
+
+
     static public void main(String[] args) throws Exception {
         queryAnaylsis_bothMulti qbm = new queryAnaylsis_bothMulti();
         qbm.getSolution();
