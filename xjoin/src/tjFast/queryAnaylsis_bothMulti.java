@@ -203,51 +203,73 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
 
     }
 
-    public void joinTables(List<String> tagList, List<List<Vector>> tables) {
+    public void joinTables(List<String> tagList, List<List<Vector>> AllTables) {
+        List<List<Vector>> result = new ArrayList<>();
         //join order
         for(int joinOrder=0; joinOrder<tagList.size(); joinOrder++){
+            List<List<Vector>> tables = AllTables;
             String addTag = tagList.get(joinOrder);
             System.out.println("add tag:"+addTag);
-            //column numbers of addTag in tables
-            List<Integer> tableColumns = new ArrayList<>();
-            //tables that contains addTag
-            List<List<Vector>> tablesToMerge = new ArrayList<>();
-            //first row(table tags name) of tablesToMerge
-            List<Vector> tableTags = new ArrayList<>();
-            //####add tables that contains current add-tag to a list(tablesToMerge)#####
-            for(List<Vector> table:tables){
-                Vector tagVector = table.get(0);
-                if(tagVector.contains(addTag)){
-                    int table_column = getColumn(tagVector,addTag);
-                    //Vector in table is [v,id,v,id,...] except the first row. "*2" -> value
-                    tableColumns.add(table_column*2);
-                    //remove first row of table since the first row is the names of tags, and table needs to be sorted later.
-                    List<Vector> table_removeFirstRow = table.subList(1,table.size());
-                    //sort table by addTag
-                    long time1 = System.currentTimeMillis();
-                    Collections.sort(table_removeFirstRow,new MyComparator(Arrays.asList(table_column*2)));
-                    long time2 = System.currentTimeMillis();
-                    totalSortTableTime += time2 -time1;
-                    //add table that contains addTag to list
-                    tablesToMerge.add(table_removeFirstRow);
-                    //add first row of table(table tag names) to a list, since we need to check tables' other tags later.
-                    tableTags.add(tagVector);
-                }
-            }
 
             //join add_tag with join_result
+            List<List<String>> tagCombs = getJoinedTagComb(tagList,joinOrder+1);
+            //check joined tags combinations one by one
+            for(List<String> tagComb:tagCombs){
+                List<List<Vector>> tablesToMerge = new ArrayList<>();
+                List<List<Integer>> tableColumns = new ArrayList<>();
+                for(int tableCursor=0; tableCursor<tables.size(); tableCursor++){
+                    List<Vector> thisTable = tables.get(tableCursor);
+                    Vector tableTag = thisTable.get(tableCursor);
+                    if(tableTag.containsAll(tagComb)){
+                        List<Integer> tableColumn = new ArrayList<>();
+                        //find common tags column number
+                        for(String tag:tagComb){
+                            int table_column = getColumn(tableTag,tag);
+                            tableColumn.add(table_column);
+                        }
 
+                        List<Vector> table_removeFirstRow = thisTable.subList(1,thisTable.size());
+
+                        //remove this table. @@@@@calculate time spend here to make sure this step will not cost too many time
+                        tables.remove(tableCursor);
+                        //sort current table according to column order
+                        Collections.sort(table_removeFirstRow,new MyComparator(tableColumn));
+                        //add table
+                        tablesToMerge.add(table_removeFirstRow);
+                        //add column number to list
+                        tableColumns.add(tableColumn);
+                    }
+                }
+                //if tablesToMerge has table contains this tag combination, join with Result
+                if(!tablesToMerge.isEmpty()){
+                    //sort result table
+                    //first, find column Nos in result table
+
+                }
+            }
 
         }
     }
 
-    public void getJoinedTagComb(List<String> tagList, int curTagNo){
+    public List<List<String>> getJoinedTagComb(List<String> tagList, int curTagNo){
         List<List<String>> joinedTagComb = new ArrayList<>();
 
         List<String> joinedTag = tagList.subList(0,curTagNo);
-        for(int i=0; i<joinedTag.size(); i++){
-            List<String> comTags = null;
+        int nCnt = joinedTag.size();
+        //right shift, divide
+        int nBit = (0xFFFFFFFF >>> (32 - nCnt));
+
+        for (int i = 1; i <= nBit; i++) {
+            List<String> combs = new ArrayList<>();
+            for (int j = 0; j < nCnt; j++) {
+                if ((i << (31 - j)) >> 31 == -1) {
+                    combs.add(joinedTag.get(j));
+                }
+            }
+            joinedTagComb.add(combs);
         }
+        joinedTagComb.sort(Comparator.comparing(List<String>::size).reversed());
+        return joinedTagComb;
     }
 
     //compare by column numbers one by one
