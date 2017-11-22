@@ -204,7 +204,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
     }
 
     public void joinTables(List<String> tagList, List<List<Vector>> AllTables) {
-        List<List<Vector>> result = new ArrayList<>();
+        List<Vector> result = new ArrayList<>();
         //join order
         for(int joinOrder=0; joinOrder<tagList.size(); joinOrder++){
             List<List<Vector>> tables = AllTables;
@@ -214,42 +214,59 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
             //join add_tag with join_result
             List<List<String>> tagCombs = getJoinedTagComb(tagList,joinOrder+1);
             //check joined tags combinations one by one
-            for(List<String> tagComb:tagCombs){
+            for(List<String> tagComb:tagCombs) {
                 List<List<Vector>> tablesToMerge = new ArrayList<>();
                 List<List<Integer>> tableColumns = new ArrayList<>();
-                for(int tableCursor=0; tableCursor<tables.size(); tableCursor++){
+                for (int tableCursor = 0; tableCursor < tables.size(); tableCursor++) {
                     List<Vector> thisTable = tables.get(tableCursor);
                     Vector tableTag = thisTable.get(tableCursor);
-                    if(tableTag.containsAll(tagComb)){
+                    if (tableTag.containsAll(tagComb)) {
                         List<Integer> tableColumn = new ArrayList<>();
                         //find common tags column number
-                        for(String tag:tagComb){
-                            int table_column = getColumn(tableTag,tag);
+                        for (String tag : tagComb) {
+                            int table_column = getColumn(tableTag, tag);
                             tableColumn.add(table_column);
                         }
 
-                        List<Vector> table_removeFirstRow = thisTable.subList(1,thisTable.size());
+                        List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
 
                         //remove this table. @@@@@calculate time spend here to make sure this step will not cost too many time
                         tables.remove(tableCursor);
                         //sort current table according to column order
-                        Collections.sort(table_removeFirstRow,new MyComparator(tableColumn));
+                        Collections.sort(table_removeFirstRow, new MyComparator(tableColumn));
                         //add table
                         tablesToMerge.add(table_removeFirstRow);
                         //add column number to list
                         tableColumns.add(tableColumn);
                     }
                 }
-                //if tablesToMerge has table contains this tag combination, join with Result
-                if(!tablesToMerge.isEmpty()){
-                    //sort result table
-                    //first, find column Nos in result table
+                //if tablesToMerge has table contains this tag combination to join with Result
+                if (!tablesToMerge.isEmpty()) {
+                    if (result.isEmpty()) {
+                        //if result is empty, it is to join the first tag
 
+                    }
+                    //else join with result
+                    else{
+                        //sort result table
+                        //first, find column Nos in result table
+                        List<Integer> resultColumn = new ArrayList<>();
+                        for (int i = 0; i < tagList.size(); i++) {
+                            if (tagComb.contains(tagList.get(i))) {
+                                resultColumn.add(i);
+                            }
+                        }
+                        //sort result table
+                        Collections.sort(result, new MyComparator(resultColumn));
+                    }
                 }
+                //else go to next loop
             }
 
         }
     }
+
+    public void joinTable()
 
     public List<List<String>> getJoinedTagComb(List<String> tagList, int curTagNo){
         List<List<String>> joinedTagComb = new ArrayList<>();
