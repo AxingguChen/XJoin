@@ -26,6 +26,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
     static List<Vector> tjFastTable = new ArrayList<>();
     static Set<String> xmlRelationTagSet = new HashSet<>();
     static List<String> allTags = new ArrayList<>();
+    static List<Vector> result = new ArrayList<>();
 
 
 
@@ -244,7 +245,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                     if (result.isEmpty() || true) {
                         //if result is empty or has no added-tag to join with tables
                         //the tables joins by them selves
-
+                        joinTable(tagComb.size(), tableColumns, tablesToMerge);
                     }
                     //else join with result
                     else{
@@ -313,11 +314,19 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                     List<List<Vector>> partTables = getIdCommonRows(joinIdTables, idColumns);
                     //check if tagComb goes to the end
                     if(tagCombSize == 0){
-                        return partTables.get(partTables.size()-1);
+                        result = partTables.get(partTables.size()-1);
                     }
                     //add rdbTables for next join
                     List<Vector> resultTable = partTables.get(partTables.size()-1);
+                    //@@@@@@calculate remove time
+                    partTables.remove(partTables.size()-1);
                     partTables.addAll(rdbTables);
+                    partTables.add(resultTable);
+                    //remove first column number for tableColumns
+                    //@@@@@@calculate remove time
+                    for(int i=0; i<tableColumns.size(); i++){
+                        tableColumns.get(i).remove(0);
+                    }
                     joinTable(tagCombSize-1, tableColumns, partTables);
 
                 }
@@ -330,7 +339,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
             //else move the table which value is minimal
             else rowCursor[compareResult] = rowCursor[compareResult]+1;
         }
-        return null;
+        return result;
     }
 
     public List<List<Vector>> getIdCommonRows(List<List<Vector>> tables, List<Integer> idColumns){
