@@ -60,32 +60,14 @@ public class test {
 
 
     static public void main(String[] args){
-
-            String str[] = { "A", "B", "C"};
-            List<String> tagList = Arrays.asList("A", "B", "C");
-//
-//        List<List<String>> joinedTagComb = new ArrayList<>();
-//
-//        List<String> joinedTag = Arrays.asList();
-//        int nCnt = joinedTag.size();
-//        //right shift, divide
-//        int nBit = (0xFFFFFFFF >>> (32 - nCnt));
-//
-//        for (int i = 1; i <= nBit; i++) {
-//            List<String> combs = new ArrayList<>();
-//            for (int j = 0; j < nCnt; j++) {
-//                if ((i << (31 - j)) >> 31 == -1) {
-//                    combs.add(joinedTag.get(j));
-//                }
-//            }
-//            joinedTagComb.add(combs);
-//        }
-//        joinedTagComb.sort(Comparator.comparing(List<String>::size).reversed());
-//        System.out.println(joinedTagComb);
-
-        Vector v = new Vector();
-        v.add("A");v.add("B");v.add("C");v.add("D");
-        System.out.println(v.containsAll(tagList));
+        int[] row = {1,2};
+        int[] rowBefore = row.clone();
+        int a = row[0];
+        System.out.println(a);
+        row[0] = 23;
+        System.out.println(a);
+        System.out.println(row[0]);
+        System.out.println(rowBefore[0]);
 
     }
 }
