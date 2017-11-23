@@ -192,7 +192,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                 }
 
                 //join tables
-//                joinTables();
+                joinTables(tagList,myTables);
 
                 //Verify query structure, multi-tjFast
                 allTags.clear();
@@ -219,7 +219,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                 List<List<Integer>> tableColumns = new ArrayList<>();
                 for (int tableCursor = 0; tableCursor < tables.size(); tableCursor++) {
                     List<Vector> thisTable = tables.get(tableCursor);
-                    Vector tableTag = thisTable.get(tableCursor);
+                    Vector tableTag = thisTable.get(0);
                     if (tableTag.containsAll(tagComb)) {
                         List<Integer> tableColumn = new ArrayList<>();
                         //find common tags column number
@@ -227,11 +227,10 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                             int table_column = getColumn(tableTag, tag);
                             tableColumn.add(table_column);
                         }
-
-                        List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
-
-                        //remove this table. @@@@@calculate time spend here to make sure this step will not cost too many time
+                        //remove this table from tables
                         tables.remove(tableCursor);
+                        tableCursor--;
+                        List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
                         //sort current table according to column order
                         Collections.sort(table_removeFirstRow, new MyComparator(tableColumn));
                         //add table
@@ -242,8 +241,9 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                 }
                 //if tablesToMerge has table contains this tag combination to join with Result
                 if (!tablesToMerge.isEmpty()) {
-                    if (result.isEmpty()) {
-                        //if result is empty, it is to join the first tag
+                    if (result.isEmpty() || true) {
+                        //if result is empty or has no added-tag to join with tables
+                        //the tables joins by them selves
 
                     }
                     //else join with result
@@ -258,6 +258,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                         }
                         //sort result table
                         Collections.sort(result, new MyComparator(resultColumn));
+
                     }
                 }
                 //else go to next loop
@@ -266,7 +267,212 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
         }
     }
 
-    public void joinTable()
+    public List<Vector> joinTable(int tagCombSize, List<List<Integer>> tableColumns, List<List<Vector>> tablesToMerge){
+        Boolean notEnd = true;
+        int tableNos = tableColumns.size();
+//        int tagCombCursor = 0;
+        int[] rowCursor = new int[tableNos];
+        while(notEnd){
+            //any one of the tables has gone to the end
+            if(isEnd(tablesToMerge,rowCursor)){
+                break;
+            }
+            List<String> tagValues = new ArrayList<>();
+            int[] rowCursor_before = rowCursor.clone();
+            //read tables current row value, and move row cursor until next value is different with current.
+            for(int tableCursor = 0; tableCursor < tableNos; tableCursor++){
+                List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                int rowNo = rowCursor[tableCursor];
+                int colNo = tableColumns.get(tableCursor).get(0); // tagCombCursor: 0
+                String thisValue = thisTable.get(rowNo).get(colNo).toString();
+                tagValues.add(thisValue);
+                //update row cursor
+                rowCursor[tableCursor]  = moveCursorUntilNextNew(thisTable, rowNo, colNo, thisValue);
+            }
+            //compare values
+            int compareResult = makeComparision(tagValues);
+            //if equals
+            if(compareResult == -1){
+                //load this part table rows to compare id and further tag value
+                List<List<Vector>> rdbTables = new ArrayList<>();
+                List<List<Vector>> joinIdTables = new ArrayList<>();
+                List<Integer> idColumns = new ArrayList<>();
+                for(int tableCursor = 0; tableCursor < tableNos; tableCursor++){
+                    List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                    if(thisTable.get(0).get(1) != null){
+                        joinIdTables.add(thisTable.subList(rowCursor_before[tableCursor],rowCursor[tableCursor]));
+                        idColumns.add(tableColumns.get(tableCursor).get(0)+1);//plus 1 is id column number, tagCombCursor: 0
+                    }
+                    else{
+                        rdbTables.add(thisTable.subList(rowCursor_before[tableCursor],rowCursor[tableCursor]));
+                    }
+                }
+                //join ids
+                if(joinIdTables.size() > 1){
+                    //pruned xml tables(contain id)
+                    List<List<Vector>> partTables = getIdCommonRows(joinIdTables, idColumns);
+                    //check if tagComb goes to the end
+                    if(tagCombSize == 0){
+                        return partTables.get(partTables.size()-1);
+                    }
+                    //add rdbTables for next join
+                    List<Vector> resultTable = partTables.get(partTables.size()-1);
+                    partTables.addAll(rdbTables);
+                    joinTable(tagCombSize-1, tableColumns, partTables);
+
+                }
+                else if(joinIdTables.size() == 0){
+                    System.out.println("Has no solution! Message from 'queryAnalysis_bothMulti'. ");
+                    return null;
+                }
+
+            }
+            //else move the table which value is minimal
+            else rowCursor[compareResult] = rowCursor[compareResult]+1;
+        }
+        return null;
+    }
+
+    public List<List<Vector>> getIdCommonRows(List<List<Vector>> tables, List<Integer> idColumns){
+//        List<int[]> commonTagIdList = new ArrayList<>();
+        Boolean notEnd = true;
+        int tableNo = tables.size();
+        List<List<Vector>> partTables = new ArrayList<>();
+        for(int i=0;i<tableNo; i++){
+            partTables.add(new ArrayList<>());
+        }
+        int[] rowCursor = new int[tableNo];
+//        List<int[]> commonIds = new ArrayList<>();
+        while(notEnd){
+            if(isEnd(tables, rowCursor)) break;
+            List<int[]> ids = new ArrayList<>();
+            for(int tableCursor=0; tableCursor<tableNo; tableCursor++){
+                ids.add((int[])tables.get(tableCursor).get(rowCursor[tableCursor]).get(idColumns.get(tableCursor)));
+            }
+            int compa = compareIds(ids);
+            //compa-> -1 means the ids are equal. other values means to move corresponding cursor.
+            if(compa==-1){
+//                commonIds.add(ids.get(0));
+//                commonTagIdList.add(ids.get(0));
+                //since id will not duplicate in the same list, so move each idList to the next row
+                for(int i=0; i<tableNo; i++){
+                    partTables.get(i).add(tables.get(i).get(rowCursor[i]));
+                    rowCursor[i] += 1;
+                }
+            }
+            else rowCursor[compa] += 1;
+        }
+
+        return partTables;
+    }
+
+    /**
+     * Compare ids in a list
+     * @param ids
+     * @return compare result
+     */
+    public int compareIds(List<int[]> ids){
+        int compareResult = 0;
+        Boolean isEqual = true;
+        Boolean sizeIsEqual = true;
+        int size_sFlag = 0;
+        int allSize = ids.size();
+        int smallSize = ids.get(0).length;
+        //sizes are also need to be compared
+        int[] idSizes = new int[allSize];
+        //compare if size are the same length
+        for(int i=1; i< allSize; i++){
+            int curSize = ids.get(i).length;
+            if(curSize !=smallSize){
+                sizeIsEqual = false;
+                if(curSize<smallSize){
+                    smallSize = curSize;
+                    size_sFlag = i;
+                }
+            }
+        }
+        for(int i=0; i< smallSize;i++){
+            int baseV = ids.get(0)[i];
+            for(int j=1; j<allSize; j++){
+                int compV = ids.get(j)[i];
+                if(compV != baseV){
+                    isEqual = false;
+                    if(compV < baseV){
+                        compareResult = j;
+                        baseV = compV;
+                    }
+                }
+            }
+        }
+        //if the size is same
+        if(!sizeIsEqual && isEqual){
+            return size_sFlag;
+
+        }else{
+            if(isEqual) return -1;
+            else return compareResult;
+        }
+    }
+
+    /**move rowNo until the next value is not the same, also add the same values' id to a list and return it.
+     *
+     * @param table, the table to move row cursor
+     * @param rowNo, initial row number, before move
+     * @param columnNo, compare-value columnNo in table
+     * @param thisValue, initial rowNo table value, as basic value
+     * @return Vector, Vector[0]: after move row number.
+     *                  Vector[1]: moved-rows of table, use to compare id/ next value with other tables
+     */
+    public int moveCursorUntilNextNew(List<Vector> table, int rowNo, int columnNo, String thisValue){
+        int row=rowNo;
+        for(; row<table.size();){
+            Vector thisRow = table.get(row);
+            String compareValue =  thisRow.get(columnNo).toString();
+            if(thisValue.equals(compareValue)){
+                row++;
+            }
+            else break;
+        }
+        return row;
+    }
+
+    /**Compare a list of strings
+     *
+     * @param values
+     * @return table cursor, which value is the smallest one and needs to go to next row. if the values are all the same, return -1
+     */
+
+    public int makeComparision(List<String> values){
+        String smallValue = values.get(0);
+        int smallValueCursor = 0;
+        Boolean equals = true;
+        for(int i=1;i<values.size();i++){
+            String currentValue = values.get(i);
+            int compare = smallValue.compareTo(currentValue);
+            if(compare > 0){
+                smallValue = values.get(i);
+                smallValueCursor = i;
+            }
+            if(compare != 0){
+                equals = false;
+            }
+        }
+        if(equals) return -1;
+
+        return smallValueCursor;
+    }
+
+
+    //return true means one table has gone to the end.
+    public boolean isEnd(List<List<Vector>> tablesLists, int[] rowCursor){
+        for(int i=0;i<tablesLists.size();i++){
+            // the last element of this table
+            if(tablesLists.get(i).size() == rowCursor[i]){
+                return true;
+            }
+        }
+        return false;
+    }
 
     public List<List<String>> getJoinedTagComb(List<String> tagList, int curTagNo){
         List<List<String>> joinedTagComb = new ArrayList<>();
