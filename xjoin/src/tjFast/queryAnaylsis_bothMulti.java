@@ -182,7 +182,7 @@ public class queryAnaylsis_bothMulti  extends DefaultHandler {
                 }
 
                 //analysis basic document
-                HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(currentTagList,basicDocuemnt);
+                HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(currentTagList,basicDocuemnt,0);
 
                 myTables = getPCTables(tagMaps,myTables);
 

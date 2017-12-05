@@ -43,7 +43,7 @@ public class queryAnalysis_multi extends DefaultHandler{
 
             //offline prepare all tag tables(value, id)
             long generateTagMapStartTime = System.currentTimeMillis();
-            HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
+            HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(tagList,basicDocuemnt,0);
             long generateTagMapEndTime = System.currentTimeMillis();
             long generateTagMapTime = generateTagMapEndTime - generateTagMapStartTime;
 

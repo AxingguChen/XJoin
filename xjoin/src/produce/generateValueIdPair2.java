@@ -12,7 +12,7 @@ import java.util.*;
 /**
  * Created by zzzhou on 2017-09-22.
  */
-public class generateValueIdPair extends DefaultHandler {
+public class generateValueIdPair2 extends DefaultHandler {
 
     private Stack tagPathStack;
     private Stack labelPathStack;
@@ -32,7 +32,6 @@ public class generateValueIdPair extends DefaultHandler {
 
     static int elementNumber = 0;
     static int validEleNum = 0;
-    static int queryNo;
 
     // Parser calls this once at the beginning of a document
     public void startDocument() throws SAXException {
@@ -146,7 +145,7 @@ public class generateValueIdPair extends DefaultHandler {
     void outputAssignedValue(String tag, String value) {
         if (tagList.contains(tag)) {
             Vector v_id = new Vector();
-            v_id.addAll(Arrays.asList(value, id.get(0),queryNo));
+            v_id.addAll(Arrays.asList(value, id.get(0)));
             tagMaps.get(tag).add(v_id);
 
 //            if(tagMaps.get(tag) != null){
@@ -212,7 +211,7 @@ public class generateValueIdPair extends DefaultHandler {
         XMLReader xmlReader = saxParser.getXMLReader();
 
         // Set the ContentHandler of the XMLReader
-        xmlReader.setContentHandler(new generateValueIdPair());
+        xmlReader.setContentHandler(new generateValueIdPair2());
 
         // Set an ErrorHandler before parsing
         xmlReader.setErrorHandler(new MyErrorHandler(System.err));
@@ -224,8 +223,7 @@ public class generateValueIdPair extends DefaultHandler {
         System.out.println("End of document Analysis");
     }
 
-    public HashMap<String, List<Vector>> generateTagVId(List<String> tagLists, String xmlFileName, int thisQueryNo) throws Exception {
-        queryNo = thisQueryNo;
+    public HashMap<String, List<Vector>> generateTagVId(List<String> tagLists, String xmlFileName) throws Exception {
         filename =  xmlFileName;
         tagPathStack = new Stack();
         labelPathStack = new Stack();
@@ -237,7 +235,7 @@ public class generateValueIdPair extends DefaultHandler {
 //        String ROOT;
         elementNumber = 0;
         validEleNum = 0;
-        generateValueIdPair g = new generateValueIdPair();
+        generateValueIdPair2 g = new generateValueIdPair2();
         tagList = tagLists;
         tagMaps = new HashMap<>();
         for(String tag:tagLists){
@@ -248,10 +246,9 @@ public class generateValueIdPair extends DefaultHandler {
         return tagMaps;
     }
 
-
     static public void main(String[] args) throws Exception {
 
-        generateValueIdPair g = new generateValueIdPair();
+        generateValueIdPair2 g = new generateValueIdPair2();
 
         tagList.addAll(Arrays.asList("a","b","c","d","e"));
         //tagList.addAll(Arrays.asList("Invoices","Invoice","OrderId","asin","price","Orderline"));

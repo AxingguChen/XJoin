@@ -3,6 +3,7 @@ package tjFast;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 import produce.generateValueIdPair;
+import produce.generateValueIdPair2;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -45,7 +46,7 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
 
             //offline prepare all tag tables(value, id)
             long generateTagMapStartTime = System.currentTimeMillis();
-            tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
+            tagMaps = generate.generateTagVId(tagList,basicDocuemnt,0);
             long generateTagMapEndTime = System.currentTimeMillis();
             long generateTagMapTime = generateTagMapEndTime - generateTagMapStartTime;
 
@@ -717,7 +718,8 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
         myTables = new ArrayList<>();
         tjFastTable = new ArrayList<>();
         xmlRelationTagSet = new HashSet<>();
-        System.out.println("second join");
+
+        System.out.println("===============second join================");
 
         //System.out.println("Total tjFast time is " + (tjFastEndTime-tjFastbeginTime));
         //System.out.println("Total tjFast by add time is " + tjFastbyAddTime);
@@ -931,11 +933,12 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
 
                     TwigSet join = new TwigSet(DTDInfor, alldata[1], alldata[0]);
 
-                    solutionCount += join.beginJoin();
+                    int solutionCount1 = join.beginJoin();
                     //keep this row in result
-                    if(solutionCount>0){
+                    if(solutionCount1>0){
                         result.add(tjFastTable.get(i));
                     }
+                    solutionCount += solutionCount1;
     //                System.out.println("solutionCount:"+solutionCount);
                     joinendTime = System.currentTimeMillis();
                     //System.out.println("join data time is " + (joinendTime - joinbeginTime));
@@ -1001,9 +1004,9 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
 
                 //produce tjFast leaves table
                 List<Vector> tjFastData = new ArrayList<>();
-                for(Vector v:tjFastTable){
+                for(int i=0; i<idLists.get(0).size(); i++){
                     Vector v1 = new Vector();
-                    v1.addAll(Arrays.asList(v.get(3*2), v.get(3*2+1), v.get(4*2), v.get(4*2+1),v.get(1*2), v.get(1*2+1)));
+                    v1.addAll(Arrays.asList(idLists.get(0).get(i), idLists.get(1).get(i)));
                     tjFastData.add(v1);
                 }
 
@@ -1049,6 +1052,7 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
 
         }
     }
+    static List<List<int[]>> idLists = new ArrayList<>();
     public void getSolution2(){
         try{
             long beginTime = System.currentTimeMillis();
@@ -1063,32 +1067,52 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
                     myTables.add(l);
                 }
             }
-//            System.out.println("getSolution:"+ myTables);
-            generateValueIdPair generate = new generateValueIdPair();
 
+            generateValueIdPair2 generate = new generateValueIdPair2();
 
+            //offline prepare all tag tables(value, id)
+            long generateTagMapStartTime = System.currentTimeMillis();
+            tagMaps = generate.generateTagVId(tagList,basicDocuemnt);
+            long generateTagMapEndTime = System.currentTimeMillis();
+            long generateTagMapTime = generateTagMapEndTime - generateTagMapStartTime;
 
             long startTime1 = System.currentTimeMillis();
             myTables = getPCTables(tagMaps,myTables);
+//            System.out.println("aaa");
+//            System.out.println(myTables.get(0).subList(0,10));
+//            System.out.println(myTables.get(1).subList(0,10));
             long endTime1 = System.currentTimeMillis();
             System.out.println("getPC tables:"+(endTime1-startTime1));
             //divide p-c relation in xml to RDBs.
 //            myTables = generate.generatePCVId(myTables);
             long endTime = System.currentTimeMillis();
-
+            Random rand = new Random();
             System.out.println("generate p-c xml tables time:"+(endTime1-startTime1));
+            //produce some mock data
+            for(int i=0;i<229150; i++){
+                Vector v = new Vector();
+                int v1 = rand.nextInt(50) + 1;
+                int[] id1 = {rand.nextInt(10)+1};
+                v.addAll(Arrays.asList(v1,id1,v1,id1));
+                myTables.get(0).add(v);
 
+                Vector vv = new Vector();
+                int vv1 = rand.nextInt(50) + 1;
+                int[] idv1 = {rand.nextInt(10)+1};
+                vv.addAll(Arrays.asList(vv1,idv1,vv1,idv1));
+                myTables.get(1).add(vv);
+            }
 
 
             beginTime = System.currentTimeMillis();
             System.out.println("merge tables");
-            List<Vector> myResult = mergeTable(tagList);
-            Collections.sort(myResult,new MyComparator(Arrays.asList(0,2,4,6,8)));
-            tjFastTable =  myResult;
-            System.out.println("tjFastTable size:"+tjFastTable.size());
+            List<List<int[]>> myResult = mergeTable2(tagList);
+
+            idLists =  myResult;
+            System.out.println("candidate Table size:"+idLists.size());
             endTime = System.currentTimeMillis();
-            System.out.println("sort table time:"+totalSortTableTime);
-            System.out.println("merge Table time:"+(endTime-beginTime-totalSortTableTime));
+            System.out.println("sort table time:"+sortTime2);
+            System.out.println("merge Table time:"+(endTime-beginTime-sortTime2));
         }
         catch(Exception e)
         {
@@ -1097,8 +1121,155 @@ public class queryAnalysis_multiCopy extends DefaultHandler{
         }
 
     }
+    static long sortTime2 = 0L;
+    public List<List<int[]>> mergeTable2(List<String> tagList){
+        //merge tables from second query
+        List<List<int[]>> idLists = new ArrayList<>();
+        List<int[]> tagid_List1 = new ArrayList<>();
+        List<int[]> tagid_List2 = new ArrayList<>();
+        List<int[]> id_List1 = new ArrayList<>();
+        for(int i=0; i<myTables.size(); i++){
+            List<Vector> thisTable = myTables.get(i);
+            Vector tagName = thisTable.get(0);
+            List<Integer> resultColumnNo = new ArrayList<>();
+            List<Integer> tableColumnNo = new ArrayList<>();
+            int resultSize = result.size();
+            for(int tagNo=0; tagNo<tagList.size(); tagNo++){
+                if(tagName.contains(tagList.get(tagNo))){
+                    if(resultSize >= tagNo) resultColumnNo.add(tagNo);
+                    int tableColumn = getColumn(tagName, tagList.get(tagNo));
+                    tableColumnNo.add(tableColumn);
+                }
+            }
+            //sort table
+            long startTime1 = System.currentTimeMillis();
+            Collections.sort(thisTable,new MyComparator(tableColumnNo));
+            Collections.sort(result,new MyComparator(resultColumnNo));
+            long startTime2 = System.currentTimeMillis();
+            sortTime2 += startTime2 - startTime1;
+
+            List<List<Vector>> tablesToMerge = Arrays.asList(result, thisTable);
+            List<List<Integer>> tableColumns = Arrays.asList(resultColumnNo,tableColumnNo );
+            //join first one
+            if(resultSize>=tagList.size()){
+                Vector v = join(tablesToMerge,tableColumns );
+                result = (List<Vector>)v.get(0);
+                id_List1 = (List<int[]>)v.get(1);
+            }
+            else{
+                List<Integer> tableColumns_2 = Arrays.asList(4,0);
+                Vector v = join2(tablesToMerge,tableColumns_2, id_List1 );
+                tagid_List1 = (List<int[]>)v.get(0);
+                tagid_List2 = (List<int[]>)v.get(1);
+            }
+        }
+        idLists.addAll(Arrays.asList(tagid_List1, tagid_List2));
+        return  idLists;
+    }
+
+    public Vector join2(List<List<Vector>> tablesToMerge, List<Integer> tableColumns, List<int[]> id_List1) {
+        Boolean notEnd = true;
+        List<int[]> tagid_List2 = new ArrayList<>();
+        List<int[]> tagid_List1 = new ArrayList<>();
+        int tableNos = tableColumns.size();
+//        int tagCombCursor = 0;
+        int[] rowCursor = new int[tableNos];
+        while (notEnd) {
+            //any one of the tables has gone to the end
+            if (isEnd(tablesToMerge, rowCursor)) {
+                break;
+            }
+            List<String> tagValues = new ArrayList<>();
+
+            //read tables current row value, and move row cursor until next value is different with current.
+            for (int tableCursor = 0; tableCursor < tableNos; tableCursor++) {
+                List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                int rowNo = rowCursor[tableCursor];
+                int colNo = tableColumns.get(tableCursor); // tagCombCursor: 0
+                String thisValue = thisTable.get(rowNo).get(colNo).toString();
+                tagValues.add(thisValue);
+                //update row cursor
+            }
+            //compare values
+            int compareResult = makeComparision(tagValues);
+            //if equals
+            if (compareResult == -1) {
+                tagid_List2.add((int[])tablesToMerge.get(1).get(rowCursor[1]).get(tableColumns.get(1)+1));
+                tagid_List1.add(id_List1.get(rowCursor[0]));
+                rowCursor[1]++;
+            }
+            else rowCursor[compareResult] += 1;
+        }
+        Vector v = new Vector();
+        v.add(tagid_List1);
+        v.add(tagid_List2);
+        return v;
+    }
 
 
 
+    public Vector join(List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns) {
+        Boolean notEnd = true;
+        List<Vector> updateResult = new ArrayList<>();
+        List<int[]> id_List1 = new ArrayList<>();
+        int tableNos = tableColumns.size();
+//        int tagCombCursor = 0;
+        int[] rowCursor = new int[tableNos];
+        while (notEnd) {
+            //any one of the tables has gone to the end
+            if (isEnd(tablesToMerge, rowCursor)) {
+                break;
+            }
+            List<String> tagValues = new ArrayList<>();
+            int[] rowCursor_before = rowCursor.clone();
+            //read tables current row value, and move row cursor until next value is different with current.
+            for (int tableCursor = 0; tableCursor < tableNos; tableCursor++) {
+                List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                int rowNo = rowCursor[tableCursor];
+                int colNo = tableColumns.get(tableCursor).get(0); // tagCombCursor: 0
+                String thisValue = thisTable.get(rowNo).get(colNo).toString();
+                tagValues.add(thisValue);
+            }
+            //compare values
+            int compareResult = makeComparision(tagValues);
+            //if equals
+            if (compareResult == -1) {
+                //compare next value if it is the same
+                List<String> nextValue= new ArrayList<>();
+                for (int tableCursor = 0; tableCursor < tableNos; tableCursor++) {
+                    List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                    int rowNo = rowCursor[tableCursor];
+                    int colNo = tableColumns.get(tableCursor).get(1); // tagCombCursor: 1
+                    String thisValue = thisTable.get(rowNo).get(colNo).toString();
+                    nextValue.add(thisValue);
+                }
+                //compare values 2
+                int compareResult2 = makeComparision(nextValue);
+                if(compareResult2 == -1){
+                    updateResult.add(result.get(rowCursor[0]));
+                    id_List1.add((int[])tablesToMerge.get(1).get(rowCursor[1]).get(tableColumns.get(1).get(1)+1));
+                    rowCursor[1]++;
+                }
+                else rowCursor[compareResult2] += 1;
+            }
+            else rowCursor[compareResult] += 1;
+        }
+        Vector v = new Vector();
+        v.add(updateResult);
+        v.add(id_List1);
+        return v;
+    }
 
+    public int moveCursorUntilNextNew2(List<Vector> table, int rowNo, int columnNo, String thisValue){
+        int row=rowNo;
+        for(; row<table.size();){
+            Vector thisRow = table.get(row);
+            String compareValue =  thisRow.get(columnNo).toString();
+            if(thisValue.equals(compareValue)){
+                row++;
+            }
+            else break;
+        }
+        return row;
+    }
 }
