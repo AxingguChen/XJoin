@@ -125,6 +125,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 }
                 //move result until value is not same
                 String resultValue = result.get(resultRow).get(resultColumn).toString();
+                //change code here@@@@
                 resultRow = moveCursorUntilNextNew(result, resultRow, resultColumn, resultValue);
                 //read and move tables in tablesToMerge until each next value new
                 List<String> tableValues = new ArrayList<>();
@@ -148,11 +149,37 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         }
     }
 
-    public int moveCursorUntilNextEqual(){
-
-        return 0;
+    public int[] moveCursorUntilNextEqual(List<Vector> table, int rowNo, int columnNo, String thisValue){
+        int row=rowNo;
+        int[] startEqualRow = {-1, -1};
+        Boolean hasEqual = false;
+        List<Vector> subTable = new ArrayList<>();
+        for(; row<table.size();){
+            Vector thisRow = table.get(row);
+            String compareValue =  thisRow.get(columnNo).toString();
+            int compareResult = thisValue.compareTo(compareValue);
+            if(compareResult == 0){
+                startEqualRow[0] = row;
+                //find sub-list of equal values in table
+                for(;row<table.size();){
+                    Vector thisRow_fEqual = table.get(row);
+                    String compareValue_fEqual =  thisRow_fEqual.get(columnNo).toString();
+                    if(thisValue.equals(compareValue_fEqual)){
+                        row++;
+                    }
+                    else break;
+                }
+                startEqualRow[1] = row;
+            }
+            else if(compareResult > 0){
+                row++;
+            }
+            else break;
+        }
+        return startEqualRow;
     }
-    public int moveCursorUntilNew(List<Vector> table, int rowNo, int columnNo, String thisValue){
+
+    public int moveCursorUntilNextNew(List<Vector> table, int rowNo, int columnNo, String thisValue){
         int row=rowNo;
         for(; row<table.size();){
             Vector thisRow = table.get(row);
