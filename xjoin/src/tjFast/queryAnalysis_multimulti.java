@@ -23,6 +23,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<List<Vector>> myTable = new ArrayList<>();
     static List<List<List<Vector>>> myTables = new ArrayList<>();
     static int queryNo;
+    static boolean joinContainResultTable = true;
 
     public void getSolution() throws Exception{
         //add-order
@@ -105,9 +106,11 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     }
 
     public void gotoJoinTables(int joinOrder, List<String> tagComb, List<String> joinOrderList,List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
+        joinContainResultTable = true;
         //case 1: result has no common tag to join with tables
         List<Integer> resultColumn = new ArrayList<>();
         if(result.isEmpty()){
+            joinContainResultTable = false;
             //pick up the last table and let it be the baseTable
             int lastTableIndex = tablesToMerge.size()-1;
             //table
@@ -151,6 +154,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     Vector transRoom = new Vector();
     public void joinTable(int tagCombCursor, List<Vector> baseTable, List<Integer> baseTableColumns, List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
         Boolean noResult;
+        List<Vector> tempResults = new ArrayList<>();
         //recursion by tagCombCursor
         if(tableColumns.get(0).size() != 0) {
             //match same value
@@ -166,9 +170,9 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 }
                 noResult = false;
                 //move result until value is not same
-                String resultValue = baseTable.get(baseTableRow).get(baseTableColumn).toString();
+                String baseValue = baseTable.get(baseTableRow).get(baseTableColumn).toString();
                 //update result row number
-                int[] baseTableRowUpdate = moveCursorUntilNoEqual(baseTable, baseTableRow, baseTableColumn, resultValue);
+                int[] baseTableRowUpdate = moveCursorUntilNoEqual(baseTable, baseTableRow, baseTableColumn, baseValue);
                 baseTableRow = baseTableRowUpdate[1];
                 //read and move tables in tablesToMerge until each next value new
                 List<List<Vector>> subTables = new ArrayList<>();
@@ -178,7 +182,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     int colNo = tableColumns.get(tableCursor).get(0); // tagCombCursor: 0
                     String thisValue = thisTable.get(rowNo).get(colNo).toString();
                     //update row cursor
-                    int[] rowUpdate  = moveCursorUntilNoEqual(thisTable, rowNo, colNo, resultValue);
+                    int[] rowUpdate  = moveCursorUntilNoEqual(thisTable, rowNo, colNo, baseValue);
 
                     rowNo = rowUpdate[0];
                     int rowNoJumpEqual = rowUpdate[1];
@@ -197,54 +201,85 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 if(!noResult){
                     List<List<List<Vector>>> querySubTables = new ArrayList<>();
                     List<List<Integer>> querySubTableColumns = new ArrayList<>();
-                    //common value is result value
-                    //match same id
-                    //divide subTables according to their origin queries
-//                    for(int queryCursor=0; queryCursor<queryNo; queryCursor++){
-//                        List<List<Vector>> querySubTable = new ArrayList<>();
-//                        List<Integer> querySubTableColumn = new ArrayList<>();
-//                        for(int subTableCursor=0; subTableCursor<subTables.size(); subTableCursor++){
-//                            int queryMark = (int)subTables.get(subTableCursor).get(0).get(2);//[value, id, queryMark]
-//                            if(queryMark == queryCursor) {
-//                                querySubTable.add(subTables.get(subTableCursor));
-//                                //not sure if this can get the correct column number
-//                                querySubTableColumn.add(tableColumns.get(subTableCursor).get(0)+1);
-//                            }
-//                        }
-//                        querySubTables.add(querySubTable);
-//                        querySubTableColumns.add(querySubTableColumn);
-//                    }
-                    //following solution we have to nest loop, but by using hashMap we only need to loop all tables once
-                    HashMap<Integer, List<Vector>> hashMap = new HashMap<>();
+
+                    //initialize
+                    List<List<List<Vector>>> sepByQueryTables = new ArrayList<>();
+                    List<List<Integer>> sepByQueryColumn = new ArrayList<>();
+                    for(int queryCur=0; queryCur<queryNo; queryCur++){
+                        List<List<Vector>> tempTable = new ArrayList<>();
+                        List<Integer> tempCol = new ArrayList<>();
+                        sepByQueryTables.add(tempTable);
+                        sepByQueryColumn.add(tempCol);
+                    }
+                    //separate tables by their queryMark
                     for(int subTableCursor=0; subTableCursor<subTables.size(); subTableCursor++){
                         List<Vector> thisSubTable = subTables.get(subTableCursor);
-                        int queryMark = (int)thisSubTable.get(0).get(2);//[value, id, queryMark]
-                        hashMap.put(queryMark, thisSubTable);
+                        //if not rdb
+                        Vector firstRow = thisSubTable.get(0);
+                        if(firstRow.get(1) != null){
+                            int queryMark = (int)firstRow.get(2);//[value, id, queryMark]
+                            //not sure if the id is correct here
+                            int idColumn = tableColumns.get(subTableCursor).get(0)+1;
+                            sepByQueryTables.get(queryMark).add(thisSubTable);
+                            sepByQueryColumn.get(queryMark).add(idColumn);
+
+                        }
+                    }
+
+                    //subBase Table
+                    List<Vector> subBaseTable = baseTable.subList(baseTableRowUpdate[0], baseTableRow);
+                    //to see if the baseTable is from result or tablesToMerge, if it is from tablesToMerge, add it to its corresponding query
+                    if(! joinContainResultTable){
+                        //if not rdb
+                        Vector firstRow = subBaseTable.get(0);
+                        if(firstRow.get(1) != null){
+                            int queryMark = (int)firstRow.get(2);
+                            int idColumn = baseTableColumn+1;
+                            sepByQueryTables.get(queryMark).add(subBaseTable);
+                            sepByQueryColumn.get(queryMark).add(idColumn);
+                        }
                     }
 
                     //compare id one by one and result ids
                     Vector solutionRow = new Vector();
                     for(int queryCursor=0; queryCursor<queryNo; queryCursor++){
-                        List<List<Vector>> thisQuerySubTables = querySubTables.get(queryCursor);
-                        List<Integer> thisQuerySubTableColumns = querySubTableColumns.get(queryCursor);
-                        List<int[]> idLists = getValueCommonIds(thisQuerySubTables, thisQuerySubTableColumns);
-                        if(! idLists.isEmpty()){
-                            if(queryCursor == 0){
-                                //add value and id
-                                solutionRow.add(resultValue);
+                        //@@@ querySubTable
+                        List<List<Vector>> thisQuerySubTables = sepByQueryTables.get(queryCursor);
+                        List<Integer> thisQuerySubTableColumns = sepByQueryColumn.get(queryCursor);
+                        if(! thisQuerySubTables.isEmpty()){
+                            List<int[]> idLists = getValueCommonIds(thisQuerySubTables, thisQuerySubTableColumns);
+    //                        if(! idLists.isEmpty()){
+    //                            if(queryCursor == 0){
+    //                                //add value and id
+    //                                solutionRow.add(resultValue);
+    //                            }
+    //                            solutionRow.add(idLists);
+                            //if id is not empty
+                            if(!idLists.isEmpty()){
+                                //if result is the baseTable
+                                if(joinContainResultTable){
+
+                                }
+                                else{
+                                    Vector tempResult = new Vector();
+                                    tempResult.add(baseValue);
+                                    tempResult.add(idLists);
+                                    tempResults.add(tempResult);
+                                }
                             }
-                            solutionRow.add(idLists);
+                            else{
+                                //clear all temp result
+                                tempResults = new ArrayList<>();
+                                break;
+                            }
                         }
-
                     }
-
                 }
             }
-
-
         }
         else{
-            //return the result
+            //add to result
+
         }
     }
 
