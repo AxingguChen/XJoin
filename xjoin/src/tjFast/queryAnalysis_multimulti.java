@@ -23,6 +23,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<List<Vector>> myTable = new ArrayList<>();
     static List<List<List<Vector>>> myTables = new ArrayList<>();
     static int queryNo;
+    static int unitJump;
     static boolean joinContainResultTable = true;
 
     public void getSolution() throws Exception{
@@ -37,6 +38,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     }
 
     public void joinTablesByOrder(List<String> joinOrderList){
+        unitJump = queryNo + 1;
         for(int joinOrder=0; joinOrder<joinOrderList.size(); joinOrder++){
             List<List<Integer>> tables = new ArrayList<>();
             //the tag that is going to be added to Result
@@ -44,7 +46,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             System.out.println("add tag:"+addTag);
 
             //join add_tag with join_result
-            List<List<String>> tagCombs = getJoinedTagComb(joinOrderList,joinOrder+1);
+            List<List<String>> tagCombs = getJoinedTagComb(joinOrderList,joinOrder);
             //check joined tags combinations one by one
             for(List<String> tagComb:tagCombs) {
                 List<List<Vector>> tablesToMerge = new ArrayList<>();
@@ -79,8 +81,9 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 //here all the tables that contain the join-tag combinations have been added to tablesToMerge
                 //their column numbers has been added to tableColumns(List<List<Integer>>)
                 //start to join these tables
-                gotoJoinTables(joinOrder, tagComb, joinOrderList, tablesToMerge, tableColumns);
-
+                if(! tablesToMerge.isEmpty()) {
+                    gotoJoinTables(joinOrder, tagComb, joinOrderList, tablesToMerge, tableColumns);
+                }
             }
         }
     }
@@ -105,8 +108,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         return smallValueCursor;
     }
 
+    //join for one combination
     public void gotoJoinTables(int joinOrder, List<String> tagComb, List<String> joinOrderList,List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
         joinContainResultTable = true;
+        List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
         //case 1: result has no common tag to join with tables
         List<Integer> resultColumn = new ArrayList<>();
         if(result.isEmpty()){
@@ -123,12 +128,12 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
         }
         //case 2: result has add-tag to join
-        else if(result.get(0).size() < (joinOrder+1)*2){
+        else if(result.get(0).size() == (joinOrder+1)*(unitJump)){
             //find tag columns in result
             List<String> tagComb_sub = tagComb.subList(0,tagComb.size()-1);
-            for (int i = 0; i < joinOrderList.size(); i++) {
-                if (tagComb_sub.contains(joinOrderList.get(i))) {
-                    resultColumn.add(i*queryNo);
+            for (int i = 0; i < joinedTags.size(); i++) {
+                if (tagComb_sub.contains(joinedTags.get(i))) {
+                    resultColumn.add(i*unitJump);
                 }
             }
             //sort result table
@@ -139,9 +144,9 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         //case 3: result does not have add-tag yet
         else{
             //find tag columns in result
-            for (int i = 0; i < joinOrderList.size(); i++) {
-                if (tagComb.contains(joinOrderList.get(i))) {
-                    resultColumn.add(i*queryNo);
+            for (int i = 0; i < joinedTags.size(); i++) {
+                if (tagComb.contains(joinedTags.get(i))) {
+                    resultColumn.add(i*unitJump);
                 }
             }
             //sort result table
@@ -152,9 +157,11 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     }
 
     Vector transRoom = new Vector();
-    public void joinTable(int tagCombCursor, List<Vector> baseTable, List<Integer> baseTableColumns, List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
+    public List<Vector> joinTable(int tagCombCursor, List<Vector> baseTable, List<Integer> baseTableColumns, List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
         Boolean noResult;
         List<Vector> tempResults = new ArrayList<>();
+        List<Vector> subBaseTable = new ArrayList<>();
+        List<List<Vector>> subTables = new ArrayList<>();
         //recursion by tagCombCursor
         if(tableColumns.get(0).size() != 0) {
             //match same value
@@ -175,7 +182,6 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 int[] baseTableRowUpdate = moveCursorUntilNoEqual(baseTable, baseTableRow, baseTableColumn, baseValue);
                 baseTableRow = baseTableRowUpdate[1];
                 //read and move tables in tablesToMerge until each next value new
-                List<List<Vector>> subTables = new ArrayList<>();
                 for(int tableCursor = 0; tableCursor < tableNos; tableCursor++) {
                     List<Vector> thisTable = tablesToMerge.get(tableCursor);
                     int rowNo = rowCursor[tableCursor];
@@ -199,9 +205,6 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 }
                 //every table has a subTable-> everyTable has common value
                 if(!noResult){
-                    List<List<List<Vector>>> querySubTables = new ArrayList<>();
-                    List<List<Integer>> querySubTableColumns = new ArrayList<>();
-
                     //initialize
                     List<List<List<Vector>>> sepByQueryTables = new ArrayList<>();
                     List<List<Integer>> sepByQueryColumn = new ArrayList<>();
@@ -227,7 +230,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     }
 
                     //subBase Table
-                    List<Vector> subBaseTable = baseTable.subList(baseTableRowUpdate[0], baseTableRow);
+                    subBaseTable = baseTable.subList(baseTableRowUpdate[0], baseTableRow);
                     //to see if the baseTable is from result or tablesToMerge, if it is from tablesToMerge, add it to its corresponding query
                     if(! joinContainResultTable){
                         //if not rdb
@@ -241,7 +244,8 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     }
 
                     //compare id one by one and result ids
-                    Vector solutionRow = new Vector();
+                    Vector tempResult = new Vector();
+                    tempResult.add(baseValue);
                     for(int queryCursor=0; queryCursor<queryNo; queryCursor++){
                         //@@@ querySubTable
                         List<List<Vector>> thisQuerySubTables = sepByQueryTables.get(queryCursor);
@@ -258,13 +262,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             if(!idLists.isEmpty()){
                                 //if result is the baseTable
                                 if(joinContainResultTable){
-
+                                    //if idList contains all idList
                                 }
                                 else{
-                                    Vector tempResult = new Vector();
-                                    tempResult.add(baseValue);
                                     tempResult.add(idLists);
-                                    tempResults.add(tempResult);
                                 }
                             }
                             else{
@@ -273,14 +274,43 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                                 break;
                             }
                         }
+                        else {
+                            tempResult.add(new ArrayList<>());
+                        }
+                    }
+                    tempResults.add(tempResult);
+                }
+            }
+            //add to result
+            //joinTable(tagCombCursor+1, result, baseTableColumns.subList(1,baseTableColumns.size(), tablesToMerge);
+            List<Integer> subBaseTableColumn = baseTableColumns.subList(1, baseTableColumns.size());
+            List<List<Integer>> subTablesColumn = new ArrayList<>();
+            for(int tableCusor=0; tableCusor<tableColumns.size(); tableCusor++){
+                List<Integer> subTableColumn = tableColumns.get(tableCusor);
+                subTablesColumn.add(subTableColumn.subList(1,subTableColumn.size()));
+            }
+            //if tagComb goes to the end
+            if(subTablesColumn.isEmpty()){
+                if(result.isEmpty()){
+                    result = tempResults;
+                }
+                else{
+                    return tempResults;
+                }
+            }
+            else{
+                //else go to the next recursion join
+                List<Vector> subTempResult = joinTable(tagCombCursor+1, subBaseTable, baseTableColumns, subTables, subTablesColumn);
+                for(int tempRow=0; tempRow<tempResults.size(); tempRow++){
+                    for(int subTempRow=0; subTempRow<subTempResult.size(); subTempRow++){
+                        Vector subRow = subTempResult.get(subTempRow);
+                        tempResults.get(tempRow).addAll(subRow);
                     }
                 }
             }
-        }
-        else{
-            //add to result
 
         }
+        return tempResults;
     }
 
     public List<int[]> getValueCommonIds(List<List<Vector>> tables, List<Integer> columnNos){
@@ -441,7 +471,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
     //get all possible tag combinations
     public List<List<String>> getJoinedTagComb(List<String> tagList, int curTagNo){
-        List<List<String>> joinedTagComb = new ArrayList<>();
+        List<List<String>> joinedTagComb = new ArrayList<>(new ArrayList<>());
 
         List<String> joinedTag = tagList.subList(0,curTagNo);
         int nCnt = joinedTag.size();
@@ -455,9 +485,11 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     combs.add(joinedTag.get(j));
                 }
             }
+            combs.add(tagList.get(curTagNo));
             joinedTagComb.add(combs);
         }
         joinedTagComb.sort(Comparator.comparing(List<String>::size).reversed());
+        joinedTagComb.add(Arrays.asList(tagList.get(curTagNo)));
         return joinedTagComb;
     }
 
