@@ -111,6 +111,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     //join for one combination
     public void gotoJoinTables(int joinOrder, List<String> tagComb, List<String> joinOrderList,List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns){
         joinContainResultTable = true;
+        transResult = new ArrayList<>();
         List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
         //case 1: result has no common tag to join with tables
         List<Integer> resultColumn = new ArrayList<>();
@@ -150,7 +151,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 }
             }
             //result has any other tag to join with tablesToMerge
-            if(resultColumn != null){
+            if(! resultColumn.isEmpty()){
                 //sort result table
                 Collections.sort(result, new MyComparator(resultColumn));
                 //join result, and tables
@@ -168,11 +169,15 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 List<Integer> baseTableColumns = tableColumns.get(lastTableIndex);
                 tableColumns.remove(lastTableIndex);
                 joinTable(0,baseTable,baseTableColumns, tablesToMerge, tableColumns, 3);
+                if(result.get(0).size() < transResult.get(0).size()){
+                    result = transResult;
+                }
             }
         }
     }
 
     Vector transRoom = new Vector();
+    List<Vector> transResult = new ArrayList<>();
     public List<Vector> joinTable(int tagCombCursor, List<Vector> baseTable, List<Integer> baseTableColumns, List<List<Vector>> tablesToMerge, List<List<Integer>> tableColumns, int statusMark){
         Boolean noResult;
         List<Vector> tempResults = new ArrayList<>();
@@ -222,6 +227,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 }
                 //every table has a subTable-> everyTable has common value
                 if(!noResult){
+                    Boolean notOnlyRDB = false;
                     //initialize
                     List<List<List<Vector>>> sepByQueryTables = new ArrayList<>();
                     List<List<Integer>> sepByQueryColumn = new ArrayList<>();
@@ -242,7 +248,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             int idColumn = tableColumns.get(subTableCursor).get(0)+1;
                             sepByQueryTables.get(queryMark).add(thisSubTable);
                             sepByQueryColumn.get(queryMark).add(idColumn);
-
+                            notOnlyRDB = true;
                         }
                     }
 
@@ -258,48 +264,59 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             int idColumn = baseTableColumn+1;
                             sepByQueryTables.get(queryMark).add(subBaseTable);
                             sepByQueryColumn.get(queryMark).add(idColumn);
+                            notOnlyRDB = true;
                         }
                     }
 
                     //compare id one by one and result ids
                     Vector tempResult = new Vector();
-                    tempResult.add(baseValue);
-                    for(int queryCursor=0; queryCursor<queryNo; queryCursor++){
-                        //@@@ querySubTable
-                        List<List<Vector>> thisQuerySubTables = sepByQueryTables.get(queryCursor);
-                        List<Integer> thisQuerySubTableColumns = sepByQueryColumn.get(queryCursor);
-                        if(! thisQuerySubTables.isEmpty()){
-                            Vector v = getValueCommonIds(thisQuerySubTables, thisQuerySubTableColumns);
-                            List<int[]> idLists = (List<int[]>) v.get(0);
-                            //@@@@here tables should to be pruned by idlist, but have not done yet
-    //                        if(! idLists.isEmpty()){
-    //                            if(queryCursor == 0){
-    //                                //add value and id
-    //                                solutionRow.add(resultValue);
-    //                            }
-    //                            solutionRow.add(idLists);
-                            //if id is not empty
-                            if(!idLists.isEmpty()){
-                                //if result is the baseTable
-                                if(joinContainResultTable){
-                                    //if idList contains all idList
-                                    List<int[]> baseTableIdList =(List<int[]>) baseTable.get(baseTableRowUpdate[0]).get(baseTableColumn+1);
-                                    if(baseTableIdList.containsAll(idLists)){
+                    //if no result or result has no tag to join
+                    if(statusMark == 0 || statusMark == 3){
+                        tempResult.add(baseValue);
+                    }
+                    //else add all rows to
+                    else{
 
-                                    }
-                                }
-                                else{
-                                    tempResult.add(idLists);
-                                }
-                            }
-                            else{
-                                //clear all temp result
-                                tempResults = new ArrayList<>();
-                                break;
-                            }
+                    }
+                    for(int queryCursor=0; queryCursor<queryNo; queryCursor++) {
+                        //tables are all rdb tables which do not have to compare id
+                        if (!notOnlyRDB) {
+                            System.out.println();
                         }
-                        else {
-                            tempResult.add(new ArrayList<>());
+                        else{
+                            //@@@ querySubTable
+                            List<List<Vector>> thisQuerySubTables = sepByQueryTables.get(queryCursor);
+                            List<Integer> thisQuerySubTableColumns = sepByQueryColumn.get(queryCursor);
+                            if (!thisQuerySubTables.isEmpty()) {
+                                Vector v = getValueCommonIds(thisQuerySubTables, thisQuerySubTableColumns);
+                                List<int[]> idLists = (List<int[]>) v.get(0);
+                                //@@@@here tables should to be pruned by idlist, but have not done yet
+                                //                        if(! idLists.isEmpty()){
+                                //                            if(queryCursor == 0){
+                                //                                //add value and id
+                                //                                solutionRow.add(resultValue);
+                                //                            }
+                                //                            solutionRow.add(idLists);
+                                //if id is not empty
+                                if (!idLists.isEmpty()) {
+                                    //if result is the baseTable
+                                    if (joinContainResultTable) {
+                                        //if idList contains all idList
+                                        List<int[]> baseTableIdList = (List<int[]>) baseTable.get(baseTableRowUpdate[0]).get(baseTableColumn + 1);
+                                        if (baseTableIdList.containsAll(idLists)) {
+
+                                        }
+                                    } else {
+                                        tempResult.add(idLists);
+                                    }
+                                } else {
+                                    //clear all temp result
+                                    tempResults = new ArrayList<>();
+                                    break;
+                                }
+                            } else {
+                                tempResult.add(new ArrayList<>());
+                            }
                         }
                     }
                     tempResults.add(tempResult);
@@ -317,6 +334,13 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     if(subTablesColumn.isEmpty()){
                         if(statusMark == 0){
                             result.add(tempResult);
+                        }
+                        else if(statusMark == 3){
+                            for(int resultRow=0; resultRow<result.size(); resultRow++){
+                                Vector v = result.get(resultRow);
+                                v.addAll(tempResult);
+                                transResult.add(v);
+                            }
                         }
                         else{
                             return tempResults;
