@@ -29,17 +29,22 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<String> basicDocuemntList = new ArrayList<>();
     static List<Hashtable> twigTagNamesList = new ArrayList<>();
     static List<String> rootList = new ArrayList<>();
-
+    long sortTotalTime = 0L;
 
     public void getSolution() throws Exception{
         //add-order
-        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
+//        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
+        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
         //get p-c relation table list
         myTables = getPCTables(joinOrderList);
         //read rdb tables
         readRDB();
         //join tables
+        long startTime1 = System.currentTimeMillis();
         joinTablesByOrder(joinOrderList);
+        long endTime1 = System.currentTimeMillis();
+        System.out.println("join tables total time:"+(endTime1-startTime1));
+        System.out.println("sort table total time:"+sortTotalTime);
     }
 
     public void joinTablesByOrder(List<String> joinOrderList){
@@ -48,15 +53,15 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             //the tag that is going to be added to Result
             String addTag = joinOrderList.get(joinOrder);
             System.out.println("add tag:"+addTag);
-
+            List<List<List<Vector>>> thisMyTables = myTables;
             //join add_tag with join_result
             List<List<String>> tagCombs = getJoinedTagComb(joinOrderList,joinOrder);
             //check joined tags combinations one by one
             for(List<String> tagComb:tagCombs) {
                 List<List<Vector>> tablesToMerge = new ArrayList<>();
                 List<List<Integer>> tableColumns = new ArrayList<>();
-                for(int setOrder=0; setOrder<myTables.size(); setOrder++){
-                    List<List<Vector>> thisSet = myTables.get(setOrder);
+                for(int setOrder=0; setOrder<thisMyTables.size(); setOrder++){
+                    List<List<Vector>> thisSet = thisMyTables.get(setOrder);
                     for(int tableCursor=0; tableCursor<thisSet.size(); tableCursor++){
                         List<Vector> thisTable = thisSet.get(tableCursor);
                         Vector tableTag = thisTable.get(0);
@@ -73,7 +78,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
                             List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
                             //sort current table according to column order
+                            long startTime1 = System.currentTimeMillis();
                             Collections.sort(table_removeFirstRow, new MyComparator(tableColumn));
+                            long endTime1 = System.currentTimeMillis();
+                            sortTotalTime += endTime1-startTime1;
                             //add table
                             tablesToMerge.add(table_removeFirstRow);
                             //add column number to list
@@ -101,7 +109,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             }
                         }
                         //sort result table
+                        long startTime1 = System.currentTimeMillis();
                         Collections.sort(result, new MyComparator(resultColumn));
+                        long endTime1 = System.currentTimeMillis();
+                        sortTotalTime += endTime1-startTime1;
                         //join result, and tables
                         result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
                     }
@@ -119,7 +130,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                         //result has any other tag to join with tablesToMerge
                         if(! resultColumn.isEmpty()){
                             //sort result table
+                            long startTime1 = System.currentTimeMillis();
                             Collections.sort(result, new MyComparator(resultColumn));
+                            long endTime1 = System.currentTimeMillis();
+                            sortTotalTime += endTime1-startTime1;
                             //join result, and tables
                             result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
 
@@ -843,6 +857,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
     //read RDB value and merge list to myTables.
     public void readRDB() throws Exception{
+        long startTime = System.currentTimeMillis();
         List<List<Vector>> rdbTables = new ArrayList<>();
         File directory = new File("xjoin/src/multi_rdbs/testTables");
         for(File f: directory.listFiles()){
@@ -874,6 +889,8 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             rdbTables.add(rdb);
         }
         myTables.add(rdbTables);
+        long endTime = System.currentTimeMillis();
+        System.out.println("read rdb time:"+(endTime-startTime));
     }
 
     public List<List<List<Vector>>> getPCTables(List<String> tagList) throws Exception{
@@ -916,9 +933,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             }
             //analysis basic document
             HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(currentTagList,basicDocuemnt, i);
-
+            long startTime = System.currentTimeMillis();
             myTable = matchPC(tagMaps,myTable,i);
-
+            long endTime = System.currentTimeMillis();
+            System.out.println("generate p-c xml tables time:"+(endTime-startTime));
             myTables.add(myTable);
             myTable = new ArrayList<>();
             allTags.clear();
