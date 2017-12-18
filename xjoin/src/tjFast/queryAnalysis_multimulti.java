@@ -22,6 +22,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<String> allTags = new ArrayList<>();
     static List<Vector> result = new ArrayList<>();
     static List<List<Vector>> myTable = new ArrayList<>();
+    //todo List<List<List<Vector>>> myTables -> List<Vector>myTables <t,t,f,f,t,f>
     static List<List<List<Vector>>> myTables = new ArrayList<>();
     static int queryNo;
     static int unitJump;
@@ -31,14 +32,14 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<String> rootList = new ArrayList<>();
     long sortTotalTime = 0L;
 
-    public void getSolution() throws Exception{
+    public void getSolution(List<String> joinOrderList,String xml_query_file,String xml_document_file, String rdb_document_file) throws Exception{
         //add-order
 //        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
-        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
+//        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
         //get p-c relation table list
-        myTables = getPCTables(joinOrderList);
+        myTables = getPCTables(joinOrderList, xml_query_file, xml_document_file);
         //read rdb tables
-        readRDB();
+        readRDB(rdb_document_file);
         //join tables
         long startTime1 = System.currentTimeMillis();
         joinTablesByOrder(joinOrderList);
@@ -70,6 +71,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             //find common tags column number
                             for (String tag : tagComb) {
                                 int table_column = getColumn(tableTag, tag);
+                                //todo
                                 tableColumn.add(table_column*2);
                             }
 
@@ -90,6 +92,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     }
 
                 }
+                //todo loop from results
                 //here all the tables that contain the join-tag combinations have been added to tablesToMerge
                 //start to join these tables
                 //if has available tables to join
@@ -856,10 +859,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     }
 
     //read RDB value and merge list to myTables.
-    public void readRDB() throws Exception{
+    public void readRDB(String rdb_tables) throws Exception{
         long startTime = System.currentTimeMillis();
         List<List<Vector>> rdbTables = new ArrayList<>();
-        File directory = new File("xjoin/src/multi_rdbs/testTables");
+        File directory = new File(rdb_tables);
         for(File f: directory.listFiles()){
             String line = "";
             Boolean firstLine = true;
@@ -886,6 +889,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 e.printStackTrace();
                 System.exit(1);
             }
+            //todo remove!
             rdbTables.add(rdb);
         }
         myTables.add(rdbTables);
@@ -893,10 +897,12 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         System.out.println("read rdb time:"+(endTime-startTime));
     }
 
-    public List<List<List<Vector>>> getPCTables(List<String> tagList) throws Exception{
+
+
+    public List<List<List<Vector>>> getPCTables(List<String> tagList,String xml_query_file,String xml_document_file) throws Exception{
         //Analysis queries to get pc relations
-        File queryFolder = new File("xjoin/src/multi_rdbs/queries/");
-        File basicDocumnetFolder = new File("xjoin/src/multi_rdbs/invoices/");
+        File queryFolder = new File(xml_query_file);
+        File basicDocumnetFolder = new File(xml_document_file);
 
         generateValueIdPair generate = new generateValueIdPair();
         //read query file
@@ -909,6 +915,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             System.exit(0) ;
         }
         //to store all pc tables from different queries
+        //todo  ??
         List<List<List<Vector>>> myTables = new ArrayList<>();
         for(int i=0; i< queryNo; i++){
             File queryFile = listOfFiles_query[i];
@@ -1174,6 +1181,19 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
     static public void main(String[] args) throws Exception {
         queryAnalysis_multimulti qbm = new queryAnalysis_multimulti();
-        qbm.getSolution();
+
+        String xml_query_file = "xjoin/src/multi_rdbs/queries/";
+        String xml_document_file = "xjoin/src/multi_rdbs/invoices/";
+        String rdb_document_file = "xjoin/src/multi_rdbs/testTables";
+
+//        String xml_query_file1 = "xjoin/src/multi_rdbs/queries/query1";
+//        String xml_document_file1 = "xjoin/src/multi_rdbs/invoices/invoices1";
+//        List<String,String>  = [[xml_query_file1,xml_query_file1],[q2,d2]]
+
+
+
+//        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
+        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
+        qbm.getSolution(joinOrderList,xml_query_file,xml_document_file,rdb_document_file);
     }
 }
