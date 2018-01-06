@@ -1,6 +1,5 @@
 package tjFast;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 import produce.generateValueIdPair;
@@ -23,7 +22,8 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<Vector> result = new ArrayList<>();
     static List<List<Vector>> myTable = new ArrayList<>();
     //todo List<List<List<Vector>>> myTables -> List<Vector>myTables <t,t,f,f,t,f>
-    static List<List<List<Vector>>> myTables = new ArrayList<>();
+    static List<List<Vector>> myTables = new ArrayList<>();
+    static List<int[]> myTablesTagList = new ArrayList<>();
     static int queryNo;
     static int unitJump;
     static boolean joinContainResultTable = true;
@@ -31,146 +31,201 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     static List<Hashtable> twigTagNamesList = new ArrayList<>();
     static List<String> rootList = new ArrayList<>();
     long sortTotalTime = 0L;
+    int resultInt = 2;//result[value, idVector, value, idVector...], so values are always in even numbers
 
     public void getSolution(List<String> joinOrderList,String xml_query_file,String xml_document_file, String rdb_document_file) throws Exception{
         //add-order
 //        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
 //        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
         //get p-c relation table list
-        myTables = getPCTables(joinOrderList, xml_query_file, xml_document_file);
+        getPCTables(joinOrderList, xml_query_file, xml_document_file);
         //read rdb tables
-        readRDB(rdb_document_file);
+        readRDB(rdb_document_file, joinOrderList);
         //join tables
         long startTime1 = System.currentTimeMillis();
-        joinTablesByOrder(joinOrderList);
+//        joinTablesByOrder(joinOrderList);
         long endTime1 = System.currentTimeMillis();
         System.out.println("join tables total time:"+(endTime1-startTime1));
         System.out.println("sort table total time:"+sortTotalTime);
     }
 
     public void joinTablesByOrder(List<String> joinOrderList){
-        unitJump = queryNo + 1;
         for(int joinOrder=0; joinOrder<joinOrderList.size(); joinOrder++){
-            //the tag that is going to be added to Result
             String addTag = joinOrderList.get(joinOrder);
             System.out.println("add tag:"+addTag);
-            List<List<List<Vector>>> thisMyTables = myTables;
-            //join add_tag with join_result
-            List<List<String>> tagCombs = getJoinedTagComb(joinOrderList,joinOrder);
-            //check joined tags combinations one by one
-            for(List<String> tagComb:tagCombs) {
+            List<List<Vector>> thisTagTables = new ArrayList<>();
+            List<int[]> thisTagTagList = new ArrayList<>();
+            List<String> joinBaseTag = joinOrderList.subList(0,joinOrder+1);
+
+            //this tag's subTables
+            for(int tableCursor=0; tableCursor<myTables.size(); tableCursor++){
+                //if current table contains baseTag
+                if(myTablesTagList.get(tableCursor)[joinOrder] == 1){
+                    thisTagTables.add(myTables.get(tableCursor));
+                    thisTagTagList.add(myTablesTagList.get(tableCursor));
+                }
+            }
+
+            //addFlag is used to determine if this table has been added
+            int[] addFlag = new int[thisTagTables.size()];
+            //join-base-tag's tables among subTables
+            for(int baseTagCursor=0; baseTagCursor<joinOrder; baseTagCursor++){
                 List<List<Vector>> tablesToMerge = new ArrayList<>();
-                List<List<Integer>> tableColumns = new ArrayList<>();
-                for(int setOrder=0; setOrder<thisMyTables.size(); setOrder++){
-                    List<List<Vector>> thisSet = thisMyTables.get(setOrder);
-                    for(int tableCursor=0; tableCursor<thisSet.size(); tableCursor++){
-                        List<Vector> thisTable = thisSet.get(tableCursor);
-                        Vector tableTag = thisTable.get(0);
-                        if (tableTag.containsAll(tagComb)) {
-                            List<Integer> tableColumn = new ArrayList<>();
-                            //find common tags column number
-                            for (String tag : tagComb) {
-                                int table_column = getColumn(tableTag, tag);
-                                //todo
-                                tableColumn.add(table_column*2);
-                            }
-
-                            //how to remove the already joined table???
-                            //...
-
-                            List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
-                            //sort current table according to column order
-                            long startTime1 = System.currentTimeMillis();
-                            Collections.sort(table_removeFirstRow, new MyComparator(tableColumn));
-                            long endTime1 = System.currentTimeMillis();
-                            sortTotalTime += endTime1-startTime1;
-                            //add table
-                            tablesToMerge.add(table_removeFirstRow);
-                            //add column number to list
-                            tableColumns.add(tableColumn);
-                        }
+                List<int[]> tablesToMergeTags = new ArrayList<>();
+                for(int tableCursor=0; tableCursor<thisTagTables.size(); tableCursor++){
+                    //if this tag's tables contains base-join-tag
+                    if(thisTagTagList.get(tableCursor)[joinOrder] == 1 && addFlag[tableCursor] != 0){
+                        tablesToMerge.add(thisTagTables.get(tableCursor));
+                        addFlag[tableCursor] = 1;
+                        tablesToMergeTags.add(thisTagTagList.get(tableCursor));
                     }
-
                 }
-                //todo loop from results
-                //here all the tables that contain the join-tag combinations have been added to tablesToMerge
-                //start to join these tables
-                //if has available tables to join
-                if(! tablesToMerge.isEmpty()){
-                    //if result is empty, it is the first join
-                    if(result.isEmpty()){
-                        result = selfJoinTable(tablesToMerge, tableColumns);
-                    }
-                    //case 2: result has add-tag to join, normal joins
-                    else if(result.get(0).size() == (joinOrder+1)*(unitJump)){
-                        List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
-                        List<Integer> resultColumn = new ArrayList<>();
-                        //find tag columns in result
-                        for (int i = 0; i < joinedTags.size(); i++) {
-                            if (tagComb.contains(joinedTags.get(i))) {
-                                resultColumn.add(i*unitJump);
-                            }
-                        }
-                        //sort result table
-                        long startTime1 = System.currentTimeMillis();
-                        Collections.sort(result, new MyComparator(resultColumn));
-                        long endTime1 = System.currentTimeMillis();
-                        sortTotalTime += endTime1-startTime1;
-                        //join result, and tables
-                        result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
-                    }
-                    //case 3: result does not have add-tag yet
-                    else{
-                        List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
-                        List<Integer> resultColumn = new ArrayList<>();
-                        //find tag columns in result
-                        List<String> tagComb_sub = tagComb.subList(0,tagComb.size()-1);
-                        for (int i = 0; i < joinedTags.size(); i++) {
-                            if (tagComb_sub.contains(joinedTags.get(i))) {
-                                resultColumn.add(i*unitJump);
-                            }
-                        }
-                        //result has any other tag to join with tablesToMerge
-                        if(! resultColumn.isEmpty()){
-                            //sort result table
-                            long startTime1 = System.currentTimeMillis();
-                            Collections.sort(result, new MyComparator(resultColumn));
-                            long endTime1 = System.currentTimeMillis();
-                            sortTotalTime += endTime1-startTime1;
-                            //join result, and tables
-                            result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
-
-                        }
-                        //else, result has no common tag with tables that contain add-tag -> n*n
-                        else{
-                            List<Vector> updateResult = new ArrayList<>();
-                            List<Vector> tagTable= selfJoinTable(tablesToMerge, tableColumns);
-                            for(int i=0; i<result.size(); i++){
-                                for(int j=0; j<tagTable.size(); j++){
-                                    Vector v = result.get(i);
-                                    v.addAll(tagTable.get(j));
-                                    updateResult.add(v);
-                                }
-                            }
-                            result = updateResult;
+                //here we have tables we need currently
+                //next step is to start joining, base on result table
+                if(!result.isEmpty()){
+                    int resultRowCursor = 0;
+                    while(resultRowCursor!=result.size()){
+                        Vector resultRow = result.get(resultRowCursor);
+                        String baseValue = resultRow.get(baseTagCursor*resultInt).toString();
+                        //compare baseValue with tablesToMerge, move their rowCursors until the value is equal or bigger than baseValue
+                        for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
+                            List<Vector> thisTable = tablesToMerge.get(tableCursor);
+                            //update row cursor
+                            //which column? how can I know the column of this table? that is going to be merged??
+//                            int[] rowUpdate  = moveCursorUntilNoEqual(thisTable, rowNo, colNo, baseValue);
                         }
                     }
                 }
+                //else result is empty, the first join
 
-            }
-            //check if tjFast can be done to prune result by structure
-            //need to come up some better solution later
-            if(joinOrder == 4){
-                List<Integer> columnNos = Arrays.asList(3,9,12);
-                doTjFast(result, columnNos,0);
-            }
-            if(joinOrder == 5){
-                List<Integer> columnNos = Arrays.asList(9,15);
-                doTjFast(result, columnNos,1);
             }
 
         }
     }
+
+//    public void joinTablesByOrder(List<String> joinOrderList){
+//        unitJump = queryNo + 1;
+//        for(int joinOrder=0; joinOrder<joinOrderList.size(); joinOrder++){
+//            //the tag that is going to be added to Result
+//            String addTag = joinOrderList.get(joinOrder);
+//            System.out.println("add tag:"+addTag);
+//            List<List<Vector>> thisMyTables = myTables;
+//            //join add_tag with join_result
+//            List<List<String>> tagCombs = getJoinedTagComb(joinOrderList,joinOrder);
+//            //check joined tags combinations one by one
+//            for(List<String> tagComb:tagCombs) {
+//                List<List<Vector>> tablesToMerge = new ArrayList<>();
+//                List<List<Integer>> tableColumns = new ArrayList<>();
+//                for(int setOrder=0; setOrder<thisMyTables.size(); setOrder++){
+//                    List<List<Vector>> thisSet = thisMyTables.get(setOrder);
+//                    for(int tableCursor=0; tableCursor<thisSet.size(); tableCursor++){
+//                        List<Vector> thisTable = thisSet.get(tableCursor);
+//                        Vector tableTag = thisTable.get(0);
+//                        if (tableTag.containsAll(tagComb)) {
+//                            List<Integer> tableColumn = new ArrayList<>();
+//                            //find common tags column number
+//                            for (String tag : tagComb) {
+//                                int table_column = getColumn(tableTag, tag);
+//                                //todo
+//                                tableColumn.add(table_column*2);
+//                            }
+//
+//                            //how to remove the already joined table???
+//                            //...
+//
+//                            List<Vector> table_removeFirstRow = thisTable.subList(1, thisTable.size());
+//                            //sort current table according to column order
+//                            long startTime1 = System.currentTimeMillis();
+//                            Collections.sort(table_removeFirstRow, new MyComparator(tableColumn));
+//                            long endTime1 = System.currentTimeMillis();
+//                            sortTotalTime += endTime1-startTime1;
+//                            //add table
+//                            tablesToMerge.add(table_removeFirstRow);
+//                            //add column number to list
+//                            tableColumns.add(tableColumn);
+//                        }
+//                    }
+//
+//                }
+//                //todo loop from results
+//                //here all the tables that contain the join-tag combinations have been added to tablesToMerge
+//                //start to join these tables
+//                //if has available tables to join
+//                if(! tablesToMerge.isEmpty()){
+//                    //if result is empty, it is the first join
+//                    if(result.isEmpty()){
+//                        result = selfJoinTable(tablesToMerge, tableColumns);
+//                    }
+//                    //case 2: result has add-tag to join, normal joins
+//                    else if(result.get(0).size() == (joinOrder+1)*(unitJump)){
+//                        List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
+//                        List<Integer> resultColumn = new ArrayList<>();
+//                        //find tag columns in result
+//                        for (int i = 0; i < joinedTags.size(); i++) {
+//                            if (tagComb.contains(joinedTags.get(i))) {
+//                                resultColumn.add(i*unitJump);
+//                            }
+//                        }
+//                        //sort result table
+//                        long startTime1 = System.currentTimeMillis();
+//                        Collections.sort(result, new MyComparator(resultColumn));
+//                        long endTime1 = System.currentTimeMillis();
+//                        sortTotalTime += endTime1-startTime1;
+//                        //join result, and tables
+//                        result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
+//                    }
+//                    //case 3: result does not have add-tag yet
+//                    else{
+//                        List<String> joinedTags = joinOrderList.subList(0,joinOrder+1);
+//                        List<Integer> resultColumn = new ArrayList<>();
+//                        //find tag columns in result
+//                        List<String> tagComb_sub = tagComb.subList(0,tagComb.size()-1);
+//                        for (int i = 0; i < joinedTags.size(); i++) {
+//                            if (tagComb_sub.contains(joinedTags.get(i))) {
+//                                resultColumn.add(i*unitJump);
+//                            }
+//                        }
+//                        //result has any other tag to join with tablesToMerge
+//                        if(! resultColumn.isEmpty()){
+//                            //sort result table
+//                            long startTime1 = System.currentTimeMillis();
+//                            Collections.sort(result, new MyComparator(resultColumn));
+//                            long endTime1 = System.currentTimeMillis();
+//                            sortTotalTime += endTime1-startTime1;
+//                            //join result, and tables
+//                            result = joinTables(result, resultColumn, tablesToMerge, tableColumns);
+//
+//                        }
+//                        //else, result has no common tag with tables that contain add-tag -> n*n
+//                        else{
+//                            List<Vector> updateResult = new ArrayList<>();
+//                            List<Vector> tagTable= selfJoinTable(tablesToMerge, tableColumns);
+//                            for(int i=0; i<result.size(); i++){
+//                                for(int j=0; j<tagTable.size(); j++){
+//                                    Vector v = result.get(i);
+//                                    v.addAll(tagTable.get(j));
+//                                    updateResult.add(v);
+//                                }
+//                            }
+//                            result = updateResult;
+//                        }
+//                    }
+//                }
+//
+//            }
+//            //check if tjFast can be done to prune result by structure
+//            //need to come up some better solution later
+//            if(joinOrder == 4){
+//                List<Integer> columnNos = Arrays.asList(3,9,12);
+//                doTjFast(result, columnNos,0);
+//            }
+//            if(joinOrder == 5){
+//                List<Integer> columnNos = Arrays.asList(9,15);
+//                doTjFast(result, columnNos,1);
+//            }
+//
+//        }
+//    }
 
     public void doTjFast(List<Vector> table, List<Integer>columnNos, int queryN){
         List<Vector> prunedTable = new ArrayList<>();
@@ -733,6 +788,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         }
     }
 
+    //only when this table has value that equals to baseValue, the startEqualRow[0] != startEqualRow[1]
     public int[] moveCursorUntilNoEqual(List<Vector> table, int rowNo, int columnNo, String thisValue){
         int row=rowNo;
         int[] startEqualRow = {row, row};
@@ -800,16 +856,12 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
     //compare by column numbers one by one
     public class MyComparator implements Comparator<Vector> {
-        List<Integer> columnNos;
-        public MyComparator(List<Integer> columnNos) {
-            this.columnNos = columnNos;
-        }
         @Override
         public int compare(Vector l1, Vector l2){
             int result = 0;
-            for(int i=0; i<columnNos.size(); i++){
-
-                int compa = (l1.get((int)columnNos.get(i)).toString()).compareTo(l2.get((int)columnNos.get(i)).toString());
+            int length = l1.size();
+            for(int i=0; i<l1.size(); i++){
+                int compa = (l1.get(i*queryNo).toString()).compareTo(l2.get(i*queryNo).toString());
                 if(compa < 0){
                     result = -1;
                     break;
@@ -859,10 +911,9 @@ public class queryAnalysis_multimulti extends DefaultHandler {
     }
 
     //read RDB value and merge list to myTables.
-    public void readRDB(String rdb_tables) throws Exception{
+    public void readRDB(String rdb_tables_dir, List<String> orderList) throws Exception{
         long startTime = System.currentTimeMillis();
-        List<List<Vector>> rdbTables = new ArrayList<>();
-        File directory = new File(rdb_tables);
+        File directory = new File(rdb_tables_dir);
         for(File f: directory.listFiles()){
             String line = "";
             Boolean firstLine = true;
@@ -871,35 +922,48 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 while ((line = br.readLine()) != null) {
                     Vector vec = new Vector();
                     if(firstLine){
+                        //read first line to tablesTags
                         vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));
                         firstLine = false;
+                        int orderLength = orderList.size();
+                        myTablesTagList.add(getTagLocation(orderList, vec));
+
                     }
                     else{
                         String[] values = line.split("\\s*,\\s*");
-                        //                    if()
                         for(String s:values){
                             vec.add(s);
                             vec.add(null);
                         }
+                        rdb.add(vec);
                     }
-//                    vec.addAll(Arrays.asList(line.split("\\s*,\\s*")));// "\\|"
-                    rdb.add(vec);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(1);
             }
-            //todo remove!
-            rdbTables.add(rdb);
+            Collections.sort(rdb, new MyComparator());
+            myTables.add(rdb);
         }
-        myTables.add(rdbTables);
         long endTime = System.currentTimeMillis();
         System.out.println("read rdb time:"+(endTime-startTime));
     }
 
 
+    public int[] getTagLocation(List<String> orderList, Vector vec){
+        int orderLength = orderList.size();
+        int[] tagFlag = new int[orderLength];
+        for(int orderCusor=0; orderCusor<orderLength; orderCusor++){
+            String tag = orderList.get(orderCusor);
+            if(vec.contains(tag)){
+                tagFlag[orderCusor] = 1;
+            }
+            else tagFlag[orderCusor] = 0;
+        }
+        return tagFlag;
+    }
 
-    public List<List<List<Vector>>> getPCTables(List<String> tagList,String xml_query_file,String xml_document_file) throws Exception{
+    public void getPCTables(List<String> tagList,String xml_query_file,String xml_document_file) throws Exception{
         //Analysis queries to get pc relations
         File queryFolder = new File(xml_query_file);
         File basicDocumnetFolder = new File(xml_document_file);
@@ -910,13 +974,12 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         File[] listOfFiles_document = basicDocumnetFolder.listFiles();
 
         queryNo = listOfFiles_query.length;
+        unitJump = queryNo + 1;
         if( queryNo != listOfFiles_document.length){
             System.out.println("please check query and basic document files. Their sizes are not same.");
             System.exit(0) ;
         }
         //to store all pc tables from different queries
-        //todo  ??
-        List<List<List<Vector>>> myTables = new ArrayList<>();
         for(int i=0; i< queryNo; i++){
             File queryFile = listOfFiles_query[i];
             File documentFile = listOfFiles_document[i];
@@ -941,22 +1004,21 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             //analysis basic document
             HashMap<String, List<Vector>> tagMaps = generate.generateTagVId(currentTagList,basicDocuemnt, i);
             long startTime = System.currentTimeMillis();
-            myTable = matchPC(tagMaps,myTable,i);
+            myTables.addAll(matchPC(tagList, tagMaps,myTable,i));
             long endTime = System.currentTimeMillis();
-            System.out.println("generate p-c xml tables time:"+(endTime-startTime));
-            myTables.add(myTable);
+
+            System.out.println("The "+ i +" query generate p-c xml tables time:"+(endTime-startTime));
             myTable = new ArrayList<>();
             allTags.clear();
         }
-        return myTables;
     }
 
-    public List<List<Vector>> matchPC(HashMap<String, List<Vector>> tagMaps, List<List<Vector>> myTables, int queryNo){
+    public List<List<Vector>> matchPC(List<String> tagList, HashMap<String, List<Vector>> tagMaps, List<List<Vector>> myTables, int queryNo){
         List<List<Vector>> pcTables = new ArrayList<>();
         for(int tableCursor=0; tableCursor<myTables.size(); tableCursor++){
             List<Vector> pcTable = new ArrayList<>();
             Vector pc = myTables.get(tableCursor).get(0);
-            pcTable.add(pc);//first row indicates tag names.
+            myTablesTagList.add(getTagLocation(tagList, pc));//first row indicates tag names.
             if(pc.size() == 2){
                 //parent tag
                 String tag_p = pc.get(0).toString();
