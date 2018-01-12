@@ -84,29 +84,12 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         }
     }
 
-//    public void joinOfTheRestTag2(int joinedTagNo, List<List<Vector>> tablesToMerge, List<int[]> tablesTagList, List<List<Integer>> tablesColumns){
-//        for(int resultRowNo=0; resultRowNo<result.size(); resultRowNo++){
-//            Vector resultRow = result.get(resultRowNo);
-//            //for each added tag
-//            for(int tagNo=0; tagNo<joinedTagNo; tagNo++){
-//                //for each table
-//                for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
-//                    int[] tableTagList = tablesTagList.get(tableCursor);
-//                    //if this table contains this added tag
-//                    if(tableTagList[tagNo] == 1){
-//
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-    public void joinOfRestTags(int joinedTagNo, List<List<Vector>> tablesToMerge, List<int[]> tablesTagList, List<List<Integer>> tablesColumns){
-        Boolean noResult = false;
+    public void joinOfRestTags(int joinedTagNo, List<List<Vector>> tablesToMerge, List<int[]> tablesTagList){
         for(int resultRowNo=0; resultRowNo<result.size(); resultRowNo++){
+            Boolean noResult = false;
             Vector resultRow = result.get(resultRowNo);
-            String addTagValue = null;
-            List<List<int[]>> addTagIds = new ArrayList<>();
+            List<List<Vector>> addTagSubTables = new ArrayList<>();
+            List<Integer> addTagLocation = new ArrayList<>();
             for(int tableCursor=0; tableCursor<tablesToMerge.size(); tableCursor++){
                 List<Vector> thisTable = tablesToMerge.get(tableCursor);
                 int[] tableTagList = tablesTagList.get(tableCursor);
@@ -120,20 +103,50 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                         int[] rowNos = binarySearch(thisTable, realColNo, resultValue);
                         //rowNos[0] = -1 means has no result, so following condition means has result
                         if(rowNos[0] >= 0){
-                            //todo , add to result, join ids[]
-
+                            //here only value is the same, we still need to compare their ids
+                            List<int[]> resultIDList = (List<int[]>) resultRow.get(tagNo*2+1);
+                            thisTable = thisTable.subList(rowNos[0], rowNos[1]);
+                            //find common id rows
+                            //todo compare current ids with result idList if the table has id
+                            //check if it from rdb or xml, get queryNo if it is from xml
+                            Vector firstRowofTable = thisTable.get(0);
+                            int colCount = firstRowofTable.size();
+                            //if colCount is odd, the table is from xml and has a queryNo. Otherwise, the table is rdb has no id need to compare
+                            if((colCount & 1) != 0){
+                                //todo to be continues here...queryNo=?
+                                int queryNo = 0;
+                            }
                         }
                         //no result
                         else{
-                            //todo break out the whole line of the result, goes to the next line
+                            noResult = true;
                             break;
                         }
                     }
                 }
-
+                if(noResult) break;
+                addTagSubTables.add(thisTable);
+                addTagLocation.add(getColNo(tableTagList, joinedTagNo));
+            }
+            //if this row all has result
+            if(!noResult){
+                //join on addTag
+                //todo join on addtag
             }
         }
     }
+
+    public List<int[]> matchIDInList(List<int[]> idList, List<Vector> table, int colNo){
+        List<int[]> idList_updated = new ArrayList<>();
+        for(int rowCursor=0; rowCursor<table.size(); rowCursor++){
+            int[] thisId = (int[])table.get(rowCursor).get(colNo);
+            if(idList.contains(thisId)){
+                idList_updated.add(thisId);
+            }
+        }
+        return idList_updated;
+    }
+
 
     public int[] binarySearch(List<Vector> table, int colNo, String value){
         int start = 0;//start position
