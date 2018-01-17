@@ -62,9 +62,6 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 if(myTablesTagList.get(tableCursor)[joinOrder]==1){
                     tablesToMerge.add(myTables.get(tableCursor));
                     tablesTagList.add(myTablesTagList.get(tableCursor));
-                    //todo
-                    //calculate the column Nos
-
                 }
             }
             //here we have all the tables that need to be joined
@@ -78,8 +75,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             }
             //else the join is based on result table.
             else{
-                //todo
-                //joinOfRestTags(...);
+                joinOfRestTags(joinOrder, tablesToMerge, tablesTagList);
             }
         }
     }
@@ -104,7 +100,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                         //rowNos[0] = -1 means has no result, so following condition means has result
                         if(rowNos[0] >= 0){
                             //here only value is the same, we still need to compare their ids
-                            List<int[]> resultIDList = (List<int[]>) resultRow.get(tagNo*2+1);
+                            List<List<int[]>> resultIDList = (List<List<int[]>>) resultRow.get(tagNo*2+1);
                             thisTable = thisTable.subList(rowNos[0], rowNos[1]);
                             //find common id rows
                             //todo compare current ids with result idList if the table has id
@@ -114,7 +110,8 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             //if colCount is odd, the table is from xml and has a queryNo. Otherwise, the table is rdb has no id need to compare
                             if((colCount & 1) != 0){
                                 //todo to be continues here...queryNo=?
-                                int queryNo = 0;
+                                int queryNo = (int)firstRowofTable.get(colCount-1);
+                                List<int[]> resultThisQueryIdList = resultIDList.get(queryNo);
                             }
                         }
                         //no result
