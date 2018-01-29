@@ -169,8 +169,9 @@ public class TwigSet {
             //utilities.DebugPrintln("return leaf is "+qact);
 
             if (leaves.size() > 1) {
-                outputSolutions(qact);
-                //System.out.println("qact "+qact);
+                if (Query.getBranchNode().length == 1)
+                    outputSolutions(qact);
+                else outputSolutions_double(qact);
             }
             advanceStream(qact);
 
@@ -205,7 +206,7 @@ public class TwigSet {
 
 
 
-    void beginJoin_naive(List<HashMap<String, String>> allTagIDValue) throws Exception{
+    void beginJoin_naive(List<HashMap<String, String>> allTagIDValue, String rdb_Table, List<String> tagList, Boolean doubleAD) throws Exception{
         System.out.println("begin join");
         List<List<String>> idList_all = new ArrayList<>();
         //�������ڲ���
@@ -237,7 +238,9 @@ public class TwigSet {
             //utilities.DebugPrintln("return leaf is "+qact);
 
             if (leaves.size() > 1) {
-                outputSolutions(qact);
+                if (Query.getBranchNode().length == 1)
+                    outputSolutions(qact);
+                else outputSolutions_double(qact);
                 //System.out.println("qact "+qact);
             }
             advanceStream(qact);
@@ -263,7 +266,7 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod naive = new naiveMethod();
-                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    int result = naive.getResult(solutionPairIDList,allTagIDValue, rdb_Table, tagList);
                     System.out.println("Final solution number is:"+result);
                 }
                 else{
@@ -274,7 +277,7 @@ public class TwigSet {
                     System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
                     //get solution pair value
                     naiveMethod naive = new naiveMethod();
-                    int result = naive.getResult(solutionPairIDList,allTagIDValue);
+                    int result = naive.getResult_doubleLayer(solutionPairIDList,allTagIDValue, rdb_Table, tagList, doubleAD);
                     System.out.println("Final solution number is:"+result);
                 }
                 //System.out.println("final result:"+finalResults.get("b"));
@@ -288,25 +291,20 @@ public class TwigSet {
 
 
 
-    void beginJoin_naiveMulti(List<HashMap<String, String>> allTagIDValue) throws Exception{
+    public List<List<String>> beginJoin_naiveMulti(List<HashMap<String, String>> allTagIDValue) throws Exception{
         System.out.println("begin join");
-        List<List<String>> idList_all = new ArrayList<>();
-        //�������ڲ���
         /*for(int i=0;i<leaves.size();i++)
 		{ String leave = (String)leaves.elementAt(i);
       boolean match  = lazyMatching.checkApproximateMatching(leave,allData,pathpatterns,dataCursor);
       System.out.println("match is "+match);
 		}*/
-
-        //�������ڲ���
-
         long begintime = System.currentTimeMillis();
+        List<List<String>> result = new ArrayList<>();
         Vector leaves = Query.getLeaves();
         for (int i = 0; i < leaves.size(); i++) {
             String s = (String) leaves.elementAt(i);
             locateMatchedLabel(s);
         }//end for
-
 
         while (numberOfFinishedLeaves != numberOfleaves) { //��ʾstreamû�н���
 
@@ -320,51 +318,43 @@ public class TwigSet {
             //utilities.DebugPrintln("return leaf is "+qact);
 
             if (leaves.size() > 1) {
-                outputSolutions(qact);
+                if (Query.getBranchNode().length == 1)
+                    outputSolutions(qact);
+                else outputSolutions_double(qact);
                 //System.out.println("qact "+qact);
             }
             advanceStream(qact);
-
-
             locateMatchedLabel(qact);
         }//end while
 
         if (leaves.size() > 1)
             emptySets();
-
         long endtime;
-        //////
         //System.out.println(" Total CPU time is "+ (endtime-begintime)+" ms.");
         System.out.println("Merge");
         if (leaves.size() > 1) {
             System.out.println(" Number of path solutions(points count) is " + numberOfSolutions);
             if (numberOfSolutions > 0) {
+                naiveMethod naive = new naiveMethod();
+                List<List<String>> solutionPairIDList;
                 if (Query.getBranchNode().length == 1){
                     //merge solution
-                    List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeOneBranch_naive(finalResults);
+                    solutionPairIDList = mergeAllPathSolutions.mergeOneBranch_naiveMulti(finalResults);
                     endtime = System.currentTimeMillis();
-                    System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
-                    //get solution pair value
-                    naiveMethod naive = new naiveMethod();
-                    naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println(" tjFast join time is "+ (endtime-begintime)+" ms.");
                 }
                 else{
                     //mergeAllPathSolutions.mergeTwoBranchs(finalResults);
-                    List<List<String>> solutionPairIDList = mergeAllPathSolutions.mergeTwoBranchs_naiveDouble(finalResults);
+                    solutionPairIDList = mergeAllPathSolutions.mergeTwoBranchs_naiveDoubleMulti(finalResults);
                     System.out.println("solution pair number is:"+solutionPairIDList.size());
                     endtime = System.currentTimeMillis();
-                    System.out.println(" tjFast time is "+ (endtime-begintime)+" ms.");
-                    //get solution pair value
-                    naiveMethod_multi naive = new naiveMethod_multi();
-                    naive.getResult(solutionPairIDList,allTagIDValue);
+                    System.out.println(" tjFast join time is "+ (endtime-begintime)+" ms.");
                 }
-                //System.out.println("final result:"+finalResults.get("b"));
-                //System.out.println(" Final path solutions is " + mergeAllPathSolutions.getPathNumber(finalResults, leaves));
-
-                //System.out.println(showAllPathSolutions());
+                //get solution pair value
+                result = naive.getResult_doubleLayermulti(solutionPairIDList,allTagIDValue);
             }
         }//end if (leaves.size() > 1)
-
+        return result;
     }//end  beginJoin()
 
 
@@ -607,15 +597,55 @@ public class TwigSet {
 
             //System.out.println("begin output qleaf is3 "+qleaf);
 
+            //only for path query
+
+            String branches[] = new String[1];
+
+            branches[0] = Query.getRoot();
+
+            boolean isSolution = true;
+            for (int j = 0; j < branches.length; j++)
+                if (!setContainsSolution(branches[j], qleaf, text, solution)) //
+                {
+                    isSolution = false;
+                    break;
+                }
+            if (isSolution) {
+                //add final path solution to solution list. text->id, s
+                addToSolutionList(text, solution, branches, qleaf);
+                numberOfSolutions++;
+            }//end if
+
+            //System.out.println("begin output qleaf is4 "+qleaf);
+
+        }//end for
+
+    }//end outputSolutions
+
+    void outputSolutions_double(String qleaf) {
+
+        //System.out.println("begin output qleaf is "+qleaf);
+
+        Vector matchingresult = (Vector) pathMatchingResults.get(qleaf);
+
+        Vector data = (Vector) allOriginalData.get(qleaf);
+
+        int datacursor = ((Integer) dataCursor.get(qleaf)).intValue();
+
+        int text[] = (int[]) data.elementAt(datacursor);
+
+        //System.out.println("text length is "+text.length);
+
+        for (int i = 0; i < matchingresult.size(); i++) {
+            //System.out.println("begin output qleaf is2 "+qleaf);
+
+            int[] solution = (int[]) matchingresult.elementAt(i);
+
+            //System.out.println("begin output qleaf is3 "+qleaf);
+
             //for double layer query
 
             String branches [] =Query.getBranchNodes(qleaf);
-
-            //only for path query
-
-//            String branches[] = new String[1];
-//
-//            branches[0] = Query.getRoot();
 
             boolean isSolution = true;
             for (int j = 0; j < branches.length; j++)

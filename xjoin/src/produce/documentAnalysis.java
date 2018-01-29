@@ -29,6 +29,7 @@ public class documentAnalysis extends DefaultHandler {
     static List<String> tagList = new ArrayList<>();
 
     String ROOT;
+    static String dir;
 
     static int elementNumber = 0;
     static int validEleNum = 0;
@@ -147,7 +148,7 @@ public class documentAnalysis extends DefaultHandler {
         //System.out.println("tag:"+tag+" value:"+(((String) eleValueStack.peek())));
         //int[] values = {Integer.parseInt((eleValueStack.peek().toString()))};
         if (tagList.contains(tag_v)) {
-            outputLabel.outputUTF8_v(tag_v, value);
+            outputLabel.outputUTF8_v(dir, tag_v, value);
         }
     }
 
@@ -158,7 +159,7 @@ public class documentAnalysis extends DefaultHandler {
         for (int i = 1; i < labelPathStack.size(); i++)
             labels[i - 1] = ((Integer) labelPathStack.elementAt(i)).intValue();
         if (tagList.contains(tag)) {
-            outputLabel.outputUTF8(tag, labels);
+            outputLabel.outputUTF8(dir, tag, labels);
             validEleNum ++;
         }
 
@@ -186,10 +187,10 @@ public class documentAnalysis extends DefaultHandler {
         System.exit(1);
     }
 
-    public void doAnalysis() throws Exception {
+    public void doAnalysis(String xml_document_file) throws Exception {
         //filename = args[0];
 
-        filename =  "xjoin/src/multi_rdbs/Invoice.xml";
+        filename =  xml_document_file;
         if (filename == null) {
             usage();
         }
@@ -217,16 +218,28 @@ public class documentAnalysis extends DefaultHandler {
         System.out.println("End of document Analysis");
     }
 
+    public void runAnalysis(List<String> tags, String xmlDocumentFile, String streamStoreDir) throws Exception{
+        documentAnalysis d = new documentAnalysis();
+        tagList = tags;
+        dir = streamStoreDir;
+//        File directory = new File(dir);
+//        for(File f: directory.listFiles())
+//            f.delete();
+        d.doAnalysis(xmlDocumentFile);
+        System.out.println("Valid element:"+validEleNum);
+    }
+
     static public void main(String[] args) throws Exception {
         documentAnalysis d = new documentAnalysis();
 
 //        tagList.addAll(Arrays.asList("a","b","c","d","e"));
-        tagList.addAll(Arrays.asList("Invoices","Invoice","OrderId","asin","price","Orderline"));
+        tagList.addAll(Arrays.asList("Invoices","Invoice","OrderId","asin","price","Orderline","productId"));
         //delete previous files
-        File directory = new File("xjoin/src/produce/outputData");
+        dir = "xjoin/src/produce/outputData";
+        File directory = new File(dir);
         for(File f: directory.listFiles())
             f.delete();
-        d.doAnalysis();
+        d.doAnalysis("xjoin/src/testCaseDataSet/testCase1/xml_document_file.xml");
         System.out.println("Valid element:"+validEleNum);
     }
 

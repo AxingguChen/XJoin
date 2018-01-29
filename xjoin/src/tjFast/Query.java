@@ -64,7 +64,32 @@ public class Query {
 		
 		return (String [])queryIgnoreWildcardsLastPart.get(leave);
 		
-	}//end getPathNames 
+	}//end getPathNames
+
+	//clear all static values that stored in Query, because in multi-multi mode we have several different queries
+	static void clearQuery(){
+		twigTagName = new Hashtable();
+
+		Root = "";
+
+		NumberOfNodes= 0;
+
+		queryNodes = null;
+
+		branch = new String [2];
+
+		branchInt = new int [2];
+
+		ChildrenTable= new Hashtable();
+
+		PathTable= new Hashtable();
+
+		BranchNodeTable= new Hashtable();
+
+		ParentTable= new Hashtable();
+
+		queryIgnoreWildcardsLastPart= new Hashtable();
+	}
 	
 	static void calculateNumberofNodes(){
 		

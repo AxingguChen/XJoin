@@ -14,6 +14,10 @@ public class queryAnalysis_naive extends DefaultHandler {
     Hashtable twigTagNames;
 
     static String filename;
+    static String rdbTable;
+    static List<String> tagList;
+    static Boolean doubleAD;
+    static String dir;
 
     String ROOT;
 
@@ -128,7 +132,7 @@ public class queryAnalysis_naive extends DefaultHandler {
 
             long loadbeginTime = System.currentTimeMillis();
 
-            Hashtable [] alldata = d.loadAllLeafData_naive (Query.getLeaves(),DTDInfor);
+            Hashtable [] alldata = d.loadAllLeafData_naive (dir, Query.getLeaves(),DTDInfor);
 
             long loadendTime = System.currentTimeMillis();
             System.out.println("load tjFast input data(include all tag id value) time is "+(loadendTime-loadbeginTime));
@@ -142,7 +146,7 @@ public class queryAnalysis_naive extends DefaultHandler {
 
             List<HashMap<String, String>> allTagIDValue = d.getAllTagIDValue();
 
-            join.beginJoin_naive(allTagIDValue);
+            join.beginJoin_naive(allTagIDValue, rdbTable, tagList, doubleAD);
 
             long joinendTime = System.currentTimeMillis();
 
@@ -189,12 +193,86 @@ public class queryAnalysis_naive extends DefaultHandler {
     }
 
 
+    public void runTest(String xml_query_file,String xml_document_file,String rdb_table, List<String> tag_List, Boolean ifDoubleAD) throws Exception{
+        //filename = args[0];
+        filename = xml_query_file;
+        //basicDocument = args[1];
+        basicDocuemnt = xml_document_file;
+        rdbTable = rdb_table;
+        tagList = tag_List;
+        doubleAD = ifDoubleAD;
+        dir = "";
+
+        if (filename == null) {
+            usage();
+        }
+
+        if (basicDocuemnt == null) {
+            usage();
+        }
+
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+
+        spf.setNamespaceAware(true);
+
+        // Create a JAXP SAXParser
+        SAXParser saxParser = spf.newSAXParser();
+
+        // Get the encapsulated SAX XMLReader
+        XMLReader xmlReader = saxParser.getXMLReader();
+
+        // Set the ContentHandler of the XMLReader
+        xmlReader.setContentHandler(new queryAnalysis_naive());
+
+        // Set an ErrorHandler before parsing
+        xmlReader.setErrorHandler(new MyErrorHandler(System.err));
+
+        // Tell the XMLReader to parse the XML document
+        xmlReader.parse(convertToFileURL(filename));
+    }
+
+    public void runTest_double(String xml_query_file,String xml_document_file,String rdb_table, List<String> tag_List, Boolean ifDoubleAD) throws Exception{
+        //filename = args[0];
+        filename = xml_query_file;
+        //basicDocument = args[1];
+        basicDocuemnt = xml_document_file;
+        rdbTable = rdb_table;
+        tagList = tag_List;
+        doubleAD = ifDoubleAD;
+        dir = "";
+        if (filename == null) {
+            usage();
+        }
+
+        if (basicDocuemnt == null) {
+            usage();
+        }
+
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+
+        spf.setNamespaceAware(true);
+
+        // Create a JAXP SAXParser
+        SAXParser saxParser = spf.newSAXParser();
+
+        // Get the encapsulated SAX XMLReader
+        XMLReader xmlReader = saxParser.getXMLReader();
+
+        // Set the ContentHandler of the XMLReader
+        xmlReader.setContentHandler(new queryAnalysis_naive());
+
+        // Set an ErrorHandler before parsing
+        xmlReader.setErrorHandler(new MyErrorHandler(System.err));
+
+        // Tell the XMLReader to parse the XML document
+        xmlReader.parse(convertToFileURL(filename));
+    }
 
     static public void main(String[] args) throws Exception {
 
         //filename = args[0];
         filename = "xjoin/src/tjFast/simplePathPattern.xml";
-        //basicDocuemnt = args[1];
+        //basicDocument = args[1];
         basicDocuemnt = "xjoin/src/multi_rdbs/Invoice.xml";
 
         if (filename == null) {
