@@ -124,6 +124,33 @@ public class testCase {
         testCase2_d.runTest(xml_query_file, xml_document_file, rdb_table,tagList,doubleAD);
     }
 
+    public void naiveTestCase1_multimulti() throws Exception {
+        //one/multi xml join one/multi rdb, naive(baseline).  Dataset 1
+        String xml_query_folder = "xjoin/src/multi_rdbs/queries/";
+        String xml_document_folder = "xjoin/src/multi_rdbs/invoices/";
+        String rdb_document_file = "xjoin/src/multi_rdbs/testTables";
+        String xmlStreamStoreDir = "xjoin/src/xmlStreams";
+        queryAnalysis_multimulti_naive testCase1 = new queryAnalysis_multimulti_naive();
+        testCase1.runTest(xml_query_folder, xml_document_folder, rdb_document_file, xmlStreamStoreDir);
+    }
+
+    public void xjoinTestCase1_multimulti() throws Exception {
+        //one/multi xml join one/multi rdb, xjoin.  Dataset 1
+        String xml_query_folder = "xjoin/src/multi_rdbs/queries/";
+        String xml_document_folder = "xjoin/src/multi_rdbs/invoices/";
+        String rdb_document_file = "xjoin/src/multi_rdbs/testTables";
+        //Dataset 1
+//        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
+        //for test
+//        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
+        //Dataset 2
+//        List<String> joinOrderList = Arrays.asList("item","location","mail","from","date","quantity");
+        //Dataset 3
+        List<String> joinOrderList = Arrays.asList("S","VBN","NP","DT","NN","VB");
+        queryAnalysis_multimulti testCase1 = new queryAnalysis_multimulti();
+        testCase1.runTest(joinOrderList, xml_query_folder, xml_document_folder, rdb_document_file);
+    }
+
     static public void main(String[] args) throws Exception {
         //Single branching node
         testCase single_t = new testCase();
@@ -146,6 +173,12 @@ public class testCase {
         //test case 2: AD
 //        double_t.xjoinTestCase2_double();
         double_t.naiveTestCase2_double();
+
+        //One/multi xml join with one/multi rdb
+        //dataset 1:
+//        testCase multi = new testCase();
+//        multi.naiveTestCase1_multimulti();
+
 
     }
 }

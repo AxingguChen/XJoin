@@ -99,9 +99,10 @@ public class generateValueIdPair extends DefaultHandler {
 
         }//end else
 
-        if (child.equalsIgnoreCase("IN")) {
-            showAssignedLable(child, labelPathStack);
-        }//end if
+        //in dataset3(treebank), "IN" is the name of an element. So line103-105 are annotated since I do not see the function of these lines in other cases.
+//        if (child.equalsIgnoreCase("IN")) {
+//            showAssignedLable(child, labelPathStack);
+//        }//end if
         outputAssignedLable(child, labelPathStack);
         //System.out.println("current element: " + child + " Path: " + tagPathStack.toString());
         //System.out.println("label: " + labelPathStack.toString());
@@ -146,7 +147,8 @@ public class generateValueIdPair extends DefaultHandler {
     void outputAssignedValue(String tag, String value) {
         if (tagList.contains(tag)) {
             Vector v_id = new Vector();
-            v_id.addAll(Arrays.asList(value, id.get(0),queryNo));
+            //elementNumber is used to sort ids in queryAnalysis_multimulti.java
+            v_id.addAll(Arrays.asList(value, id.get(0),elementNumber, queryNo));
             tagMaps.get(tag).add(v_id);
 
 //            if(tagMaps.get(tag) != null){

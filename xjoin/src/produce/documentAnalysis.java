@@ -97,10 +97,10 @@ public class documentAnalysis extends DefaultHandler {
             maxSilblingStack.push(new Integer(-1));
 
         }//end else
-
-        if (child.equalsIgnoreCase("IN")) {
-            showAssignedLable(child, labelPathStack);
-        }//end if
+        //in dataset3(treebank), "IN" is the name of an element. So line103-105 are annotated since I do not see the function of these lines in other cases.
+//        if (child.equalsIgnoreCase("IN")) {
+//            showAssignedLable(child, labelPathStack);
+//        }//end if
         outputAssignedLable(child, labelPathStack);
         //System.out.println("current element: " + child + " Path: " + tagPathStack.toString());
         //System.out.println("label: " + labelPathStack.toString());

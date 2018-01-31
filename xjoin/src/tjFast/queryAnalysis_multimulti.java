@@ -49,6 +49,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         long endTime1 = System.currentTimeMillis();
         System.out.println("join tables total time:"+(endTime1-startTime1));
 
+
     }
 
     public void joinTablesByOrder(List<String> joinOrderList){
@@ -72,7 +73,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             if(result.isEmpty()){
                 //join all tables
                 //p.s. The tags of tables are assumed to appear in the same order as joinOrderList
-                //so if we would like to join the first tag, it will always be column 0 in tables from tablesToMerge
+                //so if we would like to join the first tag, the tag will always at column 0 in tables from tablesToMerge
                 int[] colNumbers = new int[tablesToMerge.size()];
                 result = joinOfTheFirstTag(tablesToMerge,colNumbers);
             }
@@ -81,41 +82,62 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 result = joinOfRestTags(joinOrder, tablesToMerge, tablesTagList);
             }
             System.out.println("result size:"+result.size() + " after the "+joinOrder+" join");
-//            for(int i=0;i<result.size();i++){
-//                for(int j=0; j<result.get(0).size();j=j+2)
-//                    System.out.print(result.get(i).get(j)+",");
-//                System.out.println("");
-//            }
-//            System.out.println("result first row:"+result.get(0));
+
+            //todo , need to let the code can identify when may run tjFast.
             //do tjFast here SET1
 //            if(joinOrder==4){
-////                System.out.println("before tjFast 1");
-//
 //                doTjFast(result, Arrays.asList(6,8,2), 0);
-////                for(int i=0;i<result.size();i++)
-////                    System.out.println(result.get(i).get(0)+","+result.get(i).get(2)+","+result.get(i).get(4)
-////                            +","+result.get(i).get(6)+","+result.get(i).get(8));
-//
 //            }
 //            if(joinOrder==5){
-////                System.out.println("before tjFast 2");
 //                doTjFast(result, Arrays.asList(6,10), 1);
-////                for(int i=0;i<result.size();i++)
-////                    System.out.println(result.get(i).get(0)+","+result.get(i).get(2)+","+result.get(i).get(4)
-////                            +","+result.get(i).get(6)+","+result.get(i).get(8)+","+result.get(i).get(10));
 //            }
 
+            //SET2
+//            if(joinOrder==4){
+//                doTjFast(result, Arrays.asList(6,8,2), 0);
+//            }
+//            if(joinOrder==5){
+////                System.out.println(result.get(0).get(0)+","+result.get(0).get(2)+","+result.get(0).get(4)
+////                        +","+result.get(0).get(6)+","+result.get(0).get(8)+","+result.get(0).get(10));
+//                doTjFast(result, Arrays.asList(2,10), 1);
+////                System.out.println(result.get(0).get(0)+","+result.get(0).get(2)+","+result.get(0).get(4)
+////                            +","+result.get(0).get(6)+","+result.get(0).get(8)+","+result.get(0).get(10));
+//
+//        }
+            //SET 3
             if(joinOrder==4){
+                for(int i=0; i<result.size();i++){
+                    for(int j=0; j<result.get(0).size(); j=j+2){
+                        System.out.print(result.get(i).get(j)+",");
+                    }
+                    System.out.println("");
+                }
                 doTjFast(result, Arrays.asList(6,8,2), 0);
+                System.out.println("after tjFast:"+result.size());
+                for(int i=0; i<result.size();i++){
+                    for(int j=0; j<result.get(0).size(); j=j+2){
+                        System.out.print(result.get(i).get(j)+",");
+                    }
+                    System.out.println("");
+                }
             }
             if(joinOrder==5){
-//                System.out.println(result.get(0).get(0)+","+result.get(0).get(2)+","+result.get(0).get(4)
-//                        +","+result.get(0).get(6)+","+result.get(0).get(8)+","+result.get(0).get(10));
-                doTjFast(result, Arrays.asList(2,10), 1);
-//                System.out.println(result.get(0).get(0)+","+result.get(0).get(2)+","+result.get(0).get(4)
-//                            +","+result.get(0).get(6)+","+result.get(0).get(8)+","+result.get(0).get(10));
+                for(int i=0; i<result.size();i++){
+                    for(int j=0; j<result.get(0).size(); j=j+2){
+                        System.out.print(result.get(i).get(j)+",");
+                    }
+                    System.out.println("");
+                }
+                doTjFast(result, Arrays.asList(8,10), 1);
+                System.out.println("after tjFast:"+result.size());
+                for(int i=0; i<result.size();i++){
+                    for(int j=0; j<result.get(0).size(); j=j+2){
+                        System.out.print(result.get(i).get(j)+",");
+                    }
+                    System.out.println("");
+                }
+            }
 
-        }
     }}
 
     public List<Vector> joinOfRestTags(int joinedTagNo, List<List<Vector>> tablesToMerge, List<int[]> tablesTagList){
@@ -192,28 +214,38 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                             if(rowNos[0] >= 0){
                                 //same value subTable
                                 thisTable = thisTable.subList(rowNos[0], rowNos[1]);
+
+                                //todo accutually we need to update result id list here. But since the ids are followed after value, and are not in order. so...
+                                //here the ids are simply not checked. It may cause more results are found than the reality.
+
                                 //this tag value same, compare id if it is table from xml. If it is a rdb Table, skip.
                                 //calculate queryNo
-//                                int colCount_t = thisTable.get(0).size();
-//                                //if colCount is odd, the table is from xml and has a queryNo. Otherwise, the table is rdb has no id need to compare
+                                Vector thisTableFirstRow = thisTable.get(0);
+                                int colCount_t = thisTableFirstRow.size();
+
+                                //if colCount is odd, the table is from xml and has a queryNo. Otherwise, the table is rdb has no id need to compare
 //                                if((colCount_t & 1) != 0){
-//                                    int thisTQueryNo = (int)thisTable.get(0).get(thisTable.get(0).size()-1);//this table queryNo
-//                                    List<List<int[]>> resultIDList = (List<List<int[]>>) resultRow.get(colNo_r+1);
-//                                    List<int[]> resultCoresQueryIDList = resultIDList.get(thisTQueryNo);
-//                                    //??if result cores queryID list is empty??
-//                                    if(!resultCoresQueryIDList.isEmpty()){
-//                                    Vector reData = matchIDInList(resultCoresQueryIDList,thisTable, colNo_t+1);
-//                                    resultCoresQueryIDList = (List<int[]>)reData.get(0);
-//                                    //if idList has valid match
-//                                    if(!resultCoresQueryIDList.isEmpty()){
-//                                        thisTable = (List<Vector>) reData.get(1);
-//                                        //todo accutually we need to update result id list here ?
-//                                    }
-//                                    //else this result row can be skipped
-//                                    else{
-//                                        noResult = true;
-//                                        break;}
-//                                }}
+                                if(thisTableFirstRow.get(1) != null){
+                                    //sort this table
+                                    Collections.sort(thisTable, new MyComparatorOnOne(colCount_t-2));
+                                    int thisTQueryNo = (int)thisTable.get(0).get(colCount_t-1);//this table queryNo
+                                    List<List<int[]>> resultIDList = (List<List<int[]>>) resultRow.get(colNo_r+1);
+                                    List<int[]> resultCoresQueryIDList = resultIDList.get(thisTQueryNo);
+                                    //??if result cores queryID list is empty??
+                                    if(!resultCoresQueryIDList.isEmpty()){
+                                    Vector reData = matchIDInList(resultCoresQueryIDList,thisTable, colNo_t+1);
+                                    resultCoresQueryIDList = (List<int[]>)reData.get(0);
+                                    //if idList has valid match
+                                    if(!resultCoresQueryIDList.isEmpty()){
+                                        thisTable = (List<Vector>) reData.get(1);
+                                    }
+                                    //else this result row can be skipped
+                                    else{
+                                        noResult = true;
+                                        break;}
+                                }}
+
+
                             }
                         }
                     }
@@ -376,12 +408,15 @@ public class queryAnalysis_multimulti extends DefaultHandler {
             List<Vector> table = tablesToMerge.get(tableCursor);
             int rowNo = rowCursor[tableCursor];
             int colNo = colNumbers[tableCursor];
-            int colCount = table.get(0).size();
+            Vector tableFirstRow = table.get(0);
+            int colCount = tableFirstRow.size();
             rowCursor[tableCursor] = moveCursorUntilNextNew(table, rowNo, colNo, value);
             //if colCount is odd, the table is from xml and has a queryNo. Otherwise, the table is rdb has no id need to compare
-            if((colCount & 1) != 0){
+//            if((colCount & 1) != 0){
+            if(tableFirstRow.get(1) != null){
                 int queryNo = (int)table.get(rowNo).get(colCount-1);
                 List<Vector> subTable = table.subList(rowNo, rowCursor[tableCursor]);
+                Collections.sort(subTable, new MyComparatorOnOne(colCount-2));
                 subTablesToMerge.get(queryNo).add(subTable);
             }
         }
@@ -418,6 +453,14 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                     idList.add((int[])thisQuerySubTable.get(rowNo).get(colNo));
                 }
             }
+            //since the ids are followed by value and not sort in their own order, so ignore id comparison currently
+//            if(tableNo > 0){
+//                List<Vector> thisQuerySubTable = thisQuerySubTables.get(0);
+//                int colNo = colNumbers[0]+1;
+//                for(int rowNo=0; rowNo<thisQuerySubTable.size(); rowNo++){
+//                    idList.add((int[])thisQuerySubTable.get(rowNo).get(colNo));
+//                }
+//            }
 
             ids.add(idList);
 
@@ -587,11 +630,6 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         return smallValueCursor;
     }
 
-
-
-
-
-
     public int compareIds(List<int[]> ids){
         int compareResult = 0;
         Boolean isEqual = true;
@@ -708,6 +746,27 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                 else {result = 1;break;}
 
             }
+            return result;
+        }
+    }
+
+    //compare by column numbers on one column
+    //compare by column numbers one by one
+    public class MyComparatorOnOne implements Comparator<Vector> {
+        int columnNo;
+        public MyComparatorOnOne(int columnNo) {
+            this.columnNo = columnNo;
+        }
+        @Override
+        public int compare(Vector l1, Vector l2){
+            int result = 0;
+            if((int)l1.get(columnNo) < (int)l2.get(columnNo)){
+                result = -1;
+            }
+            else if((int)l1.get(columnNo) == (int)l2.get(columnNo))
+                result = 0;
+            else {result = 1;}
+
             return result;
         }
     }
@@ -855,7 +914,7 @@ public class queryAnalysis_multimulti extends DefaultHandler {
                         Vector v = new Vector();
                         //do not need to reserve place to store other queries' id_list, since solution will be stored in another list.
                         //add the query No after each line.
-                        v.addAll(Arrays.asList(table_p.get(p).get(0).toString(), p_id, table_c.get(c).get(0).toString(),c_id, queryNo));
+                        v.addAll(Arrays.asList(table_p.get(p).get(0).toString(), p_id, table_c.get(c).get(0).toString(),c_id, table_p.get(p).get(2),queryNo));
                         pcTable.add(v);
                         p++;
                         c++;
@@ -1062,6 +1121,14 @@ public class queryAnalysis_multimulti extends DefaultHandler {
         twigTagNamesList.add((Hashtable) twigTagNames.clone());
     }
 
+    public void runTest(List<String> joinOrderList, String xml_query_file, String xml_document_file, String rdb_document_file) throws Exception{
+        long startRunTime = System.currentTimeMillis();
+        queryAnalysis_multimulti qbm = new queryAnalysis_multimulti();
+        qbm.getSolution(joinOrderList,xml_query_file,xml_document_file,rdb_document_file);
+        long endRunTime = System.currentTimeMillis();
+        System.out.println("total run time is:"+(endRunTime-startRunTime));
+    }
+
     static public void main(String[] args) throws Exception {
         long startRunTime = System.currentTimeMillis();
         queryAnalysis_multimulti qbm = new queryAnalysis_multimulti();
@@ -1076,9 +1143,14 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 
 
 
+        //Dataset 1
 //        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
+        //for test
 //        List<String> joinOrderList = Arrays.asList("a","b","c","d","e","f");
-        List<String> joinOrderList = Arrays.asList("item","location","mail","from","date","quantity");
+        //Dataset 2
+//        List<String> joinOrderList = Arrays.asList("item","location","mail","from","date","quantity");
+        //Dataset 3
+        List<String> joinOrderList = Arrays.asList("S","VBN","NP","DT","NN","VB");
 
         qbm.getSolution(joinOrderList,xml_query_file,xml_document_file,rdb_document_file);
         long endRunTime = System.currentTimeMillis();

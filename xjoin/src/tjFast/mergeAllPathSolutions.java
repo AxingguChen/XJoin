@@ -14,7 +14,7 @@ public class mergeAllPathSolutions  {
 	static Vector buttonLeaves1 = new Vector();
 	static Vector buttonLeaves2 = new Vector();
 	//tag c
-	static Vector branchUnderRoot = new Vector();
+	static Vector branchUnderRoot= new Vector();
 	static int solutionPairCount = 0;
 
 	static void clearAllStaticData(){
@@ -26,7 +26,7 @@ public class mergeAllPathSolutions  {
 		buttonLeaves1 = new Vector();
 		buttonLeaves2 = new Vector();
 		//tag c
-		branchUnderRoot = new Vector();
+		branchUnderRoot =new Vector();
 		solutionPairCount = 0;
 	}
 
@@ -223,7 +223,6 @@ public class mergeAllPathSolutions  {
 
 		Vector branchleaves = Query.getBranchLeaves(branches[1]);
 
-		Vector allLeaves = Query.getLeaves();
 
 		//the tag name of single leave node of root
 		String singleLeave = Query.getRootSingleChild();
@@ -697,12 +696,14 @@ public class mergeAllPathSolutions  {
 				Vector v = ((solutionKey) data[i].elementAt(pointer[i])).branchnodes;
 				int[] datakey = (int[]) v.elementAt(branchref);
 				if (utilities.isEqual(datakey, common)) {
+					String com = utilities.ArrayToString(datakey);
 					List<int[]> pairNodeIdList = ((solutionKey) data[i].elementAt(pointer[i])).currentNode;
 					for (int[] c : currentNodeIDList) {
 						for (int[] p : pairNodeIdList) {
 							List<String> pairIDList = new ArrayList<>();
 							buttonLeaves1.add(data[0].elementAt(pointer[0]));//tag d
 							buttonLeaves2.add(p);//tag e
+							branchUnderRoot.add(com);
 						}
 					}
 				} else
@@ -726,15 +727,15 @@ public class mergeAllPathSolutions  {
 							pairIDList.add(utilities.ArrayToString((int[]) buttonLeaves2.get(pointer[i])));
 							pairIDList.add(cId);
 							//branches
-							pairIDList.add(cId.substring(0,cId.length()-2));
-							pairIDList.add(pId.substring(0,pId.length()-2));
-
+//							pairIDList.add(cId.substring(0,cId.length()-2));
+//							pairIDList.add(pId.substring(0,pId.length()-2));
+							pairIDList.add(utilities.ArrayToString(datakey));
+							pairIDList.add(branchUnderRoot.get(pointer[i]).toString());
 							//the next line is to add the solution id of b to solutionList. Since the rdb table does not contains
 							solutionPairIDList.add(pairIDList);
 							solutionPairCount++;
 						}}
-				} else
-					return false;
+				} else return false;
 
 			}}
 

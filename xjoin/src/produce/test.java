@@ -175,6 +175,8 @@ public class test {
         List<String> a = Arrays.asList("1","2","3");
         List<String> b = a.subList(0,3);
         System.out.println(b);
+        String s = "abc";
+
 
     }
     public static boolean isPC(List<String[]> tagList,String parent, String child){

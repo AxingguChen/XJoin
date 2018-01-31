@@ -139,15 +139,30 @@ public class queryAnalysis_multimulti_naive extends DefaultHandler {
             System.out.println("begin load data !"+leaves+" "+branches);
 
             //do analysis document
-            List<String> allNodes = leaves;
+            List<String> allNodes = new ArrayList<>();
+            List<String> realLeaves = new ArrayList<>();
+            Vector realLeavesVec = new Vector();
+//            allNodes.addAll(leaves);
+            //I do not know how to let the leaves are appeared always in the same order
+            if(leaves.size()>2) {
+                realLeaves.addAll(leaves.subList(1, 3));
+                realLeaves.add(leaves.get(0));
+                realLeavesVec.addAll(realLeaves);
+            }
+            else {
+                realLeaves.addAll(leaves);
+                realLeavesVec.addAll(leaves);
+            }
+            allNodes.addAll(realLeaves);
             allNodes.addAll(branches);
+
 //            documentAnalysis da = new documentAnalysis();
             String dir = xmlStreamDir + "_"+queryM;
 //            da.runAnalysis(allNodes,basicDocument,dir);
-//            System.out.println("queryM:"+queryM);
+            System.out.println("queryM:"+queryM);
             long loadbeginTime = System.currentTimeMillis();
 
-            Hashtable [] alldata = d.loadAllLeafData_naive (dir, Query.getLeaves(),DTDInfor);
+            Hashtable [] alldata = d.loadAllLeafData_naive (dir, realLeavesVec,DTDInfor);
 
             long loadendTime = System.currentTimeMillis();
             System.out.println("load tjFast input data(include all tag id value) time is "+(loadendTime-loadbeginTime));
@@ -165,7 +180,7 @@ public class queryAnalysis_multimulti_naive extends DefaultHandler {
                 allTagIDValue.add(d.loadData_naiveMulti(dir,tag, DTDInfor));
             }
 
-            List<List<String>> addResult = join.beginJoin_naiveMulti(allTagIDValue);
+            List<List<String>> addResult = join.beginJoin_naiveMulti(allTagIDValue,realLeavesVec);
 
             tjFastResult.add(addResult);
             tjFastResultTags.add(allNodes);
@@ -446,9 +461,6 @@ public class queryAnalysis_multimulti_naive extends DefaultHandler {
                 List<List<String>> baseSubTable = baseTable.subList(baseRow, bRowUpdate);
                 List<List<String>> addSubTable = addTable.subList(addRow,aRowUpdate);
                 if(baseCols.size()>1){
-                    //todo need to update later for complex situation
-                    //this situation means we need to compare other values to match same value.
-//                    System.out.println("never goes to here...from queryAnalysisMultiMultiNaive line 319");
                     List<Integer> baseSubCols = baseCols.subList(1,baseCols.size());
                     List<Integer> addSubCols = addCols.subList(1,addCols.size());
                     newTable.addAll(joinTables(baseSubTable, addSubTable, baseSubCols, addSubCols, addTableAddTagCols));
@@ -527,6 +539,15 @@ public class queryAnalysis_multimulti_naive extends DefaultHandler {
         xmlReader.parse(convertToFileURL(filename));
         long endTJFastTime = System.currentTimeMillis();
         System.out.println("This tjFastTime:"+(endTJFastTime-startTJFastTime));
+    }
+
+    public void runTest(String xml_query_folder, String xml_document_folder, String rdb_document_file, String xmlStreamStoreDir)  throws Exception {
+        long startRunTime = System.currentTimeMillis();
+        tjFastResult = new ArrayList<>();
+        queryAnalysis_multimulti_naive a = new queryAnalysis_multimulti_naive();
+        a.getSolution(xml_query_folder,xml_document_folder,rdb_document_file,xmlStreamStoreDir);
+        long endRunTime = System.currentTimeMillis();
+        System.out.println("Total run time:"+(endRunTime-startRunTime));
     }
 
     static public void main(String[] args) throws Exception {

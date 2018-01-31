@@ -291,7 +291,7 @@ public class TwigSet {
 
 
 
-    public List<List<String>> beginJoin_naiveMulti(List<HashMap<String, String>> allTagIDValue) throws Exception{
+    public List<List<String>> beginJoin_naiveMulti(List<HashMap<String, String>> allTagIDValue,Vector realLeavesVec) throws Exception{
         System.out.println("begin join");
         /*for(int i=0;i<leaves.size();i++)
 		{ String leave = (String)leaves.elementAt(i);
@@ -300,7 +300,7 @@ public class TwigSet {
 		}*/
         long begintime = System.currentTimeMillis();
         List<List<String>> result = new ArrayList<>();
-        Vector leaves = Query.getLeaves();
+        Vector leaves = realLeavesVec;
         for (int i = 0; i < leaves.size(); i++) {
             String s = (String) leaves.elementAt(i);
             locateMatchedLabel(s);
