@@ -72,8 +72,8 @@ public class naiveMethod_multi {
 
 
     //read RDB value and merge list to myTables.
-    public void readRDB() throws Exception{
-        File directory = new File("xjoin/src/multi_rdbs/testTables");
+    public void readRDB(String rdb_Table) throws Exception{
+        File directory = new File(rdb_Table);
         for(File f: directory.listFiles()){
             String line = "";
             Boolean firstLine = true;
@@ -105,9 +105,9 @@ public class naiveMethod_multi {
 
 
 
-    public void joinTables(List<List<String>> xmlTable, List<List<List<String>>> rdbTables){
+    public void joinTables(List<List<String>> xmlTable, List<List<List<String>>> rdbTables, List<String> xmlTagList){
         List<List<String>> finalResult = new ArrayList<>();
-        List<String> xmlTagList = Arrays.asList("asin","price","OrderId");
+
         //join each rdbTable with xmlTable
         for(List<List<String>> rdbTable: rdbTables){
             List<String> rdbTags = rdbTable.get(0);
@@ -192,17 +192,11 @@ public class naiveMethod_multi {
     }
 
 
-    public int getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue) throws Exception{
+    public int getResult(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue,String rdb_Table, List<String> xmlTagList) throws Exception{
         //rdb table
         //load
-        List<String> leaves = Query.getLeaves();
-
-        //for double layer AD only
-        leaves.add(leaves.get(0));
-        leaves.remove(0);
-
         long loadRDBbeginTime = System.currentTimeMillis();
-        readRDB();
+        readRDB(rdb_Table);
         List<List<List<String>>> rdbValue = myTables;
         long loadRDBendTime = System.currentTimeMillis();
         System.out.println("load rdb table data time is: " + (loadRDBendTime - loadRDBbeginTime));
@@ -228,7 +222,7 @@ public class naiveMethod_multi {
 
         //join table time
         long joinbegintime = System.currentTimeMillis();
-        joinTables(xmlList,rdbValue );
+        joinTables(xmlList,rdbValue, xmlTagList );
         long joinendtime = System.currentTimeMillis();
         System.out.println("sort table time is: "+ sortTableTime);
         System.out.println("only join xml&rdb time is: " + (joinendtime - joinbegintime-sortTableTime));
@@ -236,36 +230,40 @@ public class naiveMethod_multi {
         return 0;
     }
 
-    static public void main(String[] args) throws Exception{
-        naiveMethod_multi nm = new naiveMethod_multi();
+    public int getResult_doubleLayer(List<List<String>> solutionPairIDList,List<HashMap<String, String>> allTagIDValue,String rdb_Table, List<String> xmlTagList) throws Exception{
+        //rdb table
+        //for double layer AD only
+        xmlTagList.add(xmlTagList.get(0));
+        xmlTagList.remove(0);
+
         long loadRDBbeginTime = System.currentTimeMillis();
-        nm.readRDB();
+        readRDB(rdb_Table);
         List<List<List<String>>> rdbValue = myTables;
-////        //List<List<String>> rdbValue = buildRDBValue(leaves);
         long loadRDBendTime = System.currentTimeMillis();
-        System.out.println("load rdb table data time is " + (loadRDBendTime - loadRDBbeginTime));
-//        String[] queryNode = {"asin","price"};
-//        List<List<String>> resultList = new ArrayList<>();
-//        List<HashMap<String, String>> allTagIDValue = new ArrayList<>();
-//        //load all related tag's value and id
-//        for (int i = 0; i < queryNode.length; i++) {
-//            String tagName = queryNode[i];
-//            HashMap<String, String> tagMap = nm.getTagMap(tagName);
-//            allTagIDValue.add(tagMap);
-//        }
-//        List<String> sortedKeys=new ArrayList(allTagIDValue.get(0).keySet());
-//
-//        //sortedKeys.addAll(new ArrayList(allTagIDValue.get(1).keySet()));
-//        Collections.sort(sortedKeys);
-//        FileWriter writer = new FileWriter("xjoin/src/allTag.txt");
-//        for(String str: sortedKeys) {
-//            writer.write(str+","+allTagIDValue.get(0).get(str)+"\r\n");
-//        }
-//        writer.close();
-//
-//
-//        System.out.println("contains:"+allTagIDValue.get(1).containsKey("/128/5/2"));
-//            nm.loadRDBValue(Arrays.asList("asin","price"));
+        System.out.println("load rdb table data time is: " + (loadRDBendTime - loadRDBbeginTime));
+
+        //XML
+        //load
+        long loadbeginTime = System.currentTimeMillis();
+
+        //for AD double layer
+        List<HashMap<String, String>> ADDouble = new ArrayList<>();
+        ADDouble.add(allTagIDValue.get(1));
+        ADDouble.add(allTagIDValue.get(2));
+        ADDouble.add(allTagIDValue.get(0));
+        List<List<String>> xmlList = getValuePair(solutionPairIDList,ADDouble);
+
+        long loadendTime = System.currentTimeMillis();
+        System.out.println("Find xml value by id time is " + (loadendTime - loadbeginTime));
+
+        //join table time
+        long joinbegintime = System.currentTimeMillis();
+        joinTables(xmlList,rdbValue, xmlTagList );
+        long joinendtime = System.currentTimeMillis();
+        System.out.println("sort table time is: "+ sortTableTime);
+        System.out.println("only join xml&rdb time is: " + (joinendtime - joinbegintime-sortTableTime));
+        System.out.println("total join xml&rdb time is: " + (joinendtime - joinbegintime));
+        return 0;
     }
 }
 

@@ -16,10 +16,12 @@ public class generateData {
         StringBuilder sb = new StringBuilder();
         Random rand = new Random();
         // 1 million
-        for(int i=0; i<10000; i++){
-            sb.append(rand.nextInt(50)+"");
+        for(int i=0; i<1000000; i++){
+            String s = rand.nextInt(50000) + "";
+            sb.append(s+(char)(rand.nextInt(26) + 'a'));
             sb.append(',');
-            sb.append(rand.nextInt(50)+"");
+            s = rand.nextInt(50000)+"";
+            sb.append(s+(char)(rand.nextInt(26) + 'a'));
             sb.append('\n');
         }
         pw.write(sb.toString());

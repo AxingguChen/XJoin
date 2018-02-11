@@ -16,7 +16,7 @@ public class loadDataSet {
     public List<HashMap<String, String>> getAllTagIDValue() {
         return allTagIDValue;
     }
-    Hashtable[] loadAllLeafData_naive(Vector leaves,DTDTable DTDInfor) throws Exception{
+    Hashtable[] loadAllLeafData_naive(String dir, Vector leaves,DTDTable DTDInfor) throws Exception{
 
 
         allData = new Hashtable () ;
@@ -25,7 +25,7 @@ public class loadDataSet {
 
 
         for(int i=0;i<leaves.size();i++){
-            Vector v [] = loadData_naive((String)leaves.elementAt(i),DTDInfor);
+            Vector v [] = loadData_naive(dir, (String)leaves.elementAt(i),DTDInfor);
             allOriginalData.put( (String)leaves.elementAt(i), v[0]);
             allData.put( (String)leaves.elementAt(i), v[1]);
 
@@ -41,7 +41,7 @@ public class loadDataSet {
 
     }//end loadAllLeafData
 
-    Vector []  loadData_naive (String tag,DTDTable DTDInfor ){	//???loaddata[0] ????????,??	loaddata[1]??tag?
+    Vector []  loadData_naive (String dir, String tag,DTDTable DTDInfor ){	//???loaddata[0] ????????,??	loaddata[1]??tag?
 
         HashMap<String, String> tagMap = new HashMap();
         Vector [] loadedData = new Vector [2];
@@ -51,8 +51,8 @@ public class loadDataSet {
         RandomAccessFile r = null;
         RandomAccessFile r_v = null;
         try{
-            r = new   RandomAccessFile("xjoin/src/produce/outputData\\"+tag,"rw");
-            r_v = new RandomAccessFile("xjoin/src/produce/outputData/" + tag + "_v", "rw");//read value file
+            r = new   RandomAccessFile(dir+"\\"+tag,"rw");
+            r_v = new RandomAccessFile(dir+"/" + tag + "_v", "rw");//read value file
             r_v.seek(0);
             String value = null;
             int count = 0;
@@ -97,7 +97,43 @@ public class loadDataSet {
 
         allTagIDValue.add(tagMap);
         return loadedData ;
+    }
 
+    HashMap<String, String>  loadData_naiveMulti (String dir, String tag,DTDTable DTDInfor ){	//???loaddata[0] ????????,??	loaddata[1]??tag?
+
+        HashMap<String, String> tagMap = new HashMap();
+        Vector [] loadedData = new Vector [2];
+        loadedData[0] = new Vector();
+        loadedData[1] = new Vector();
+
+        RandomAccessFile r = null;
+        RandomAccessFile r_v = null;
+        try{
+            r = new   RandomAccessFile(dir+"\\"+tag,"rw");
+            r_v = new RandomAccessFile(dir+"/" + tag + "_v", "rw");//read value file
+            r_v.seek(0);
+            String value = null;
+            while ((value = r_v.readUTF()) != null)
+            { 	byte len = r.readByte();
+                //System.out.println("length is "+len);
+                int [] data = new int [len];
+                for(int i=0;i<len;i++)
+                    data[i] = r.readUnsignedByte();
+
+                int [] result = convertToIntegers (data);
+                String id =  utilities.ArrayToString(result);
+                tagMap.put(id, value);
+                totalElement++;
+            }//end while
+        }catch (EOFException eofex) {
+            //do nothing
+        }
+        catch(Exception e){
+            System.out.println("e is "+e);
+        }//end catch
+        finally {
+            try {r.close();} catch (Exception e) {} }//end finally
+        return tagMap;
     }
 
 

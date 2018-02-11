@@ -11,9 +11,9 @@ public class labelMatching {
     static String runningResult="";
     static int readRDBcount = 0;
     // this function still need modification to meet analysis the tag name automatically
-    public List<Vector> readRDBValue_line(List<String> tagList) throws Exception{
+    public List<Vector> readRDBValue_line(List<String> tagList, String rdbFile) throws Exception{
         List<Vector> result = new ArrayList<>();
-        String csvFile = "xjoin/src/buildRandom1wSmallResult.csv";
+        String csvFile = rdbFile;
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -200,7 +200,7 @@ public class labelMatching {
     }
 
 
-    public List<Vector> getSolution(List<String> tags)  throws Exception{
+    public List<Vector> getSolution(List<String> tags, String rdbFile)  throws Exception{
         labelMatching m = new labelMatching();
         //left_tag/right_tag -> left/right id list
         long loadbeginTime = 0L;
@@ -230,7 +230,7 @@ public class labelMatching {
         //Load RDB value
         //System.out.println("load RDB value");
         loadRDBbeginTime = System.currentTimeMillis();
-        List<Vector> result =m.readRDBValue_line(tags);
+        List<Vector> result =m.readRDBValue_line(tags, rdbFile);
         //List<Match> result =m.buildRDBValue(leftTag,rightTag);
         //List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
@@ -286,13 +286,5 @@ public class labelMatching {
         return matchResult;
     }
 
-    public static void main(String[] args) throws Exception{
-        labelMatching lm = new labelMatching();
-        //List<Match> re = lm.getSolution("b","c");
-        List<Vector> re = lm.getSolution(Arrays.asList("asin","price"));
 
-        //System.out.println(re);
-//        lm.readRDBValue_line("asin","price");
-//        lm.getTagMap("asin");
-    }
 }

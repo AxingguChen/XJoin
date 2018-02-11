@@ -13,11 +13,11 @@ public class outputLabel {
 
     }//end outputLabel
 
-    static void outputUTF8(String tag, int[] labels) {
+    static void outputUTF8(String dir, String tag, int[] labels) {
 
         try {
 
-            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag, "rw");
+            RandomAccessFile r = new RandomAccessFile(dir+"\\" + tag, "rw");
 
             long fileLength = r.length();
             r.seek(fileLength);
@@ -57,11 +57,11 @@ public class outputLabel {
         byte[] array = value.getBytes();
     }
 
-    static void outputUTF8_v(String tag, String value) {
+    static void outputUTF8_v(String dir, String tag, String value) {
 
         try {
 
-            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag +"_v", "rw");
+            RandomAccessFile r = new RandomAccessFile(dir+"\\" + tag +"_v", "rw");
 
             long fileLength = r.length();
             r.seek(fileLength);
@@ -78,9 +78,9 @@ public class outputLabel {
 
     }//end output
 
-    static public void readUTF8_v(String tag) throws Exception{
+    static public void readUTF8_v(String dir, String tag) throws Exception{
         try{
-            RandomAccessFile r = new RandomAccessFile("xjoin/src/produce/outputData\\" + tag +"_v", "rw");
+            RandomAccessFile r = new RandomAccessFile(dir+"\\" + tag +"_v", "rw");
             r.seek(0);
             String tmp = null;
             while ((tmp=r.readUTF()) != null){
@@ -248,7 +248,7 @@ public class outputLabel {
         }
         in.close();*/
         outputLabel o = new outputLabel();
-        o.readUTF8_v("c");
+//        o.readUTF8_v("c");
 
     }//end main
 

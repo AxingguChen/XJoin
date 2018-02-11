@@ -14,6 +14,9 @@ public class queryAnalysis extends DefaultHandler {
     Hashtable twigTagNames;
 
     static String filename;
+    static String rdbTable;
+    static List<String> tagList;
+
 
     String ROOT;
 
@@ -122,12 +125,13 @@ public class queryAnalysis extends DefaultHandler {
 
             List<Hashtable[]> ALLData = new ArrayList<Hashtable[]>();
             labelMatching lm = new labelMatching();
-            List<String> tagList = new ArrayList<>();
-            for(int i=0;i< Query.getLeaves().size();i++){
-                tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
-            }
+            //get tagList automatically from queryLeaves
+//            List<String> tagList = new ArrayList<>();
+//            for(int i=0;i< Query.getLeaves().size();i++){
+//                tagList.add((String) Query.getLeaves().elementAt(i)); // get query leaves
+//            }
 
-            List<Vector> re = lm.getSolution(tagList); // get xml value match table result
+            List<Vector> re = lm.getSolution(tagList, rdbTable); // get xml value match table result
 //            for(labelMatching_old.Match m:re){
 //                try {
 //                    BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/xjoinAfterRemoveResult.txt",true));
@@ -183,15 +187,14 @@ public class queryAnalysis extends DefaultHandler {
                 solutionCount += join.beginJoin();
 //                System.out.println("solutionCount:"+solutionCount);
                 joinendTime = System.currentTimeMillis();
-                //System.out.println("join data time is " + (joinendTime - joinbeginTime));
+
                 totalJoinTime += joinendTime - joinbeginTime;
-                //tjFastbyAddTime = tjFastbyAddTime + joinendTime -loadbeginTime;
+
             }
             long tjFastEndTime = System.currentTimeMillis();
             long totalendTime = System.currentTimeMillis();
             System.out.println("solutionCount:"+solutionCount);
-            //System.out.println("Total tjFast time is " + (tjFastEndTime-tjFastbeginTime));
-            //System.out.println("Total tjFast by add time is " + tjFastbyAddTime);
+
 
 
             System.out.println("Total tjFast load data time is " + totalLoadTime);
@@ -203,13 +206,7 @@ public class queryAnalysis extends DefaultHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }//end catch
-    	/*join.locateMatchedLabel("c");
-    	join.advanceStream("d");
-    	join.locateMatchedLabel("d");
-    	join.advanceStream("b");
-    	join.locateMatchedLabel("b");*/
 
-        //join.MatchedPrefixes ("c","a" );// parameter format(leaf,branch)
 
 
     }//end document
@@ -236,13 +233,45 @@ public class queryAnalysis extends DefaultHandler {
         System.exit(1);
     }
 
+    public void runTest(String xml_query_file, String xml_document_file, String rdb_table, List<String> tag_list) throws Exception{
+        filename = xml_query_file;
+        basicDocuemnt = xml_document_file;
+        rdbTable = rdb_table;
+        tagList = tag_list;
+        if (filename == null) {
+            usage();
+        }
+
+        if (basicDocuemnt == null) {
+            usage();
+        }
+
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+
+        spf.setNamespaceAware(true);
+
+        // Create a JAXP SAXParser
+        SAXParser saxParser = spf.newSAXParser();
+
+        // Get the encapsulated SAX XMLReader
+        XMLReader xmlReader = saxParser.getXMLReader();
+
+        // Set the ContentHandler of the XMLReader
+        xmlReader.setContentHandler(new queryAnalysis());
+
+        // Set an ErrorHandler before parsing
+        xmlReader.setErrorHandler(new MyErrorHandler(System.err));
+
+        // Tell the XMLReader to parse the XML document
+        xmlReader.parse(convertToFileURL(filename));
+    }
 
 
     static public void main(String[] args) throws Exception {
 
         //filename = args[0];
         filename = "xjoin/src/tjFast/simplePathPattern.xml";
-        //basicDocuemnt = args[1];
+        //basicDocument = args[1];
         basicDocuemnt = "xjoin/src/test.xml";
 
         if (filename == null) {

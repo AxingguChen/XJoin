@@ -1,10 +1,5 @@
 package produce;
 
-//import org.apache.poi.ss.usermodel.Cell;
-//import org.apache.poi.ss.usermodel.CellType;
-//import org.apache.poi.ss.usermodel.Row;
-//import org.apache.poi.ss.usermodel.Sheet;
-//import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import tjFast.*;
 
 import java.io.*;
@@ -39,12 +34,6 @@ public class labelMatching {
         public List getR_ID(){ return rightTagID;}
     }
 
-    public static class joinMatch {
-        private String tagValue;
-        private String rightTagValue;
-
-    }
-
     public static class tagMap {
         private String value;
         private int[] id;
@@ -73,9 +62,9 @@ public class labelMatching {
     }
     long totalT = 0;
     // this function still need modification to meet analysis the tag name automatically
-    public List<Match> readRDBValue_line(List<String> tagList) throws Exception{
+    public List<Match> readRDBValue_line(List<String> tagList, String rdbTable) throws Exception{
         List<Match> result = new ArrayList<>();
-        String csvFile = "xjoin/src/table.csv";
+        String csvFile = rdbTable;
         String line = "";
 
         try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
@@ -216,30 +205,6 @@ public class labelMatching {
      }
 
 
-    public List<Match> buildRDBValue_100(){
-        List<Match> result = new ArrayList<>();
-
-        result.add(new Match("B001CXLSSW","37.94",null,null));
-        result.add(new Match("B00IL2QNQO","38.97",null,null));
-        result.add(new Match("B00FR84QG4","59.95",null,null));
-        result.add(new Match("B001QBZIMC","6.93",null,null));
-        result.add(new Match("B000UUBFZY","9.99",null,null));
-        result.add(new Match("B0093Q8JCI","22.9",null,null));
-        result.add(new Match("B004J41HQY","85.55",null,null));
-        result.add(new Match("B000NMBLDU","14.95",null,null));
-        result.add(new Match("B001BS98N0","11.95",null,null));
-        result.add(new Match("B005G2G2OU","172.95",null,null));
-        int count;
-        List a = new ArrayList();
-        a.add("aaaa");
-        for(count=10; count<100;count++){
-        result.add(new Match("aaa","bbb",a,null));
-        }
-
-
-        ////System.out.println("original build RDB value count:"+count);
-        return result;
-    }
 
     public List<tagMap> getTagMap_map(String tag)  throws Exception{
         List<tagMap> tagList = new ArrayList<>();
@@ -640,7 +605,7 @@ public class labelMatching {
         }
     }
 
-    public List<Match> getSolution(String leftTag, String rightTag)  throws Exception{
+    public List<Match> getSolution(String leftTag, String rightTag, String rdbTable)  throws Exception{
         labelMatching m = new labelMatching();
         //left_tag/right_tag -> left/right id list
         long loadbeginTime = 0L;
@@ -674,7 +639,7 @@ public class labelMatching {
         List<String> tagList = new ArrayList<>();
         tagList.add(leftTag);
         tagList.add(rightTag);
-        List<Match> result =m.readRDBValue_line(tagList);
+        List<Match> result =m.readRDBValue_line(tagList,rdbTable);
         //List<Match> result =m.buildRDBValue(leftTag,rightTag);
         //List<Match> result =m.readRDBValue(leftTag,rightTag);
         loadRDBendTime = System.currentTimeMillis();
@@ -784,7 +749,6 @@ public class labelMatching {
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter("xjoin/src/testResult.txt"));
             out.write("Result\r\n"+runningResult);  //Replace with the string
-            //you are trying to write
             out.close();
         }
         catch (IOException e)
@@ -796,14 +760,5 @@ public class labelMatching {
         ////System.out.println("remove count:"+remove_count+ " after remove candidate size:"+result.size());
         System.out.println(runningResult);
         return result;
-    }
-
-    public static void main(String[] args) throws Exception{
-        labelMatching lm = new labelMatching();
-        //List<Match> re = lm.getSolution("b","c");
-        List<Match> re = lm.getSolution("asin","price");
-        //System.out.println(re);
-//        lm.readRDBValue_line("asin","price");
-//        lm.getTagMap("asin");
     }
 }

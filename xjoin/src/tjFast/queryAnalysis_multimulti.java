@@ -39,8 +39,10 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 //        List<String> joinOrderList = Arrays.asList("Invoice","OrderId","Orderline","asin","price","productId");
         //get p-c relation table list
         getPCTables(joinOrderList, xml_query_file, xml_document_file);
+        System.out.println("sortPCTableTime = "+sortTotalTime);
         //read rdb tables
         readRDB(rdb_document_file, joinOrderList);
+        System.out.println("sort table total time:"+sortTotalTime);
         //join tables
         long startTime1 = System.currentTimeMillis();
         joinTablesByOrder(joinOrderList);
@@ -113,8 +115,8 @@ public class queryAnalysis_multimulti extends DefaultHandler {
 //                System.out.println(result.get(0).get(0)+","+result.get(0).get(2)+","+result.get(0).get(4)
 //                            +","+result.get(0).get(6)+","+result.get(0).get(8)+","+result.get(0).get(10));
 
-            }
-        }}
+        }
+    }}
 
     public List<Vector> joinOfRestTags(int joinedTagNo, List<List<Vector>> tablesToMerge, List<int[]> tablesTagList){
         //extend result
